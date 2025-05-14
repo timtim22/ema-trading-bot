@@ -1,0 +1,15 @@
+<h1>EMA Trading Bot</h1>
+<p>Welcome to the EMA Trading Bot application!</p>
+
+<% if user_signed_in? %>
+  <p>You are logged in as: <strong><%= current_user.email %></strong></p>
+  <p>
+    <%= link_to "Edit Profile", edit_user_registration_path %> |
+    <%= button_to "Logout", destroy_user_session_path, method: :delete %>
+  </p>
+<% else %>
+  <p>
+    <%= link_to "Sign Up", new_user_registration_path %> |
+    <%= link_to "Login", new_user_session_path %>
+  </p>
+<% end %>

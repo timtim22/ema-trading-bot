@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  symbol: MyString
+  period: 1
+  value: 9.99
+  timestamp: 2025-05-12 12:24:52
+
+two:
+  symbol: MyString
+  period: 1
+  value: 9.99
+  timestamp: 2025-05-12 12:24:52

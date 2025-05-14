@@ -1,0 +1,96 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+\
+---
+alwaysApply: true
+description: Main project guidelines and coding standards for the EMA trading bot, incorporating project scope.
+---
+
+@doc/project_scope.md
+
+If a prompt starts with:
+
+- AQ, the AI must ask 3 clarifying or exploratory questions before attempting a full answer.
+- KIS, the AI should respond as concisely as possible — bullet points or max 3-4 lines.
+- CODEONLY, AI should respond with only code, no explanations or comments.
+- REFACTOR, AI will act like a senior dev reviewing a PR: check for naming, architecture, bugs, readability, and possible improvements.
+
+
+
+GENERAL CODE ARCHITECTURE
+Keep files small and focused (Single Responsibility Principle).
+
+Use app/services, app/queries, app/forms to isolate logic.
+
+Avoid fat controllers and models.
+
+Prefer ViewComponents or partials for reusable UI.
+
+Favor readability over cleverness. Express intent clearly.
+
+Use consistent naming conventions (e.g., user_service.rb, UserForm).
+
+Follow RESTful routes and standard Rails conventions.
+
+⚙️ RUBY ON RAILS RULES
+Use strong parameters in controllers: params.require(...).permit(...).
+
+Controller actions should be under 15 lines.
+
+Use before_actions to reduce duplication.
+
+Extract business logic to services or concerns.
+
+Use model scopes for filtering (e.g., scope :active, -> { where(active: true) }).
+
+Always validate data at the model level.
+
+Prefer UUIDs for external-facing models.
+
+Index all foreign keys and frequently queried columns.
+
+Handle exceptions gracefully. Avoid rescue nil.
+
+🔥 HOTWIRE (Turbo + Stimulus)
+Use turbo-frame for local updates, avoid full page reloads.
+
+Use meaningful IDs for turbo-frames (e.g., turbo-frame id="comment_#{comment.id}").
+
+Keep Stimulus controllers single-purpose.
+
+Stimulus targets must follow predictable naming patterns.
+
+Extract repeated behaviors into mixins if Stimulus controllers grow.
+
+Minimize DOM updates using Turbo Streams.
+
+🎨 TAILWIND CSS
+Use Tailwind for layout, not logic.
+
+Don't over-nest HTML – flatter is better.
+
+Use semantic HTML (<button>, <section>, <form> etc.)
+
+Reuse UI with Tailwind and ERB partials or components.
+
+Abstract frequently-used styles into @apply in application.tailwind.css.
+
+Keep Tailwind classes consistent: order (layout → spacing → colors → state).
+
+🤖 AI-FRIENDLY PRACTICES
+Name methods and variables descriptively (e.g., expire_trial_users instead of run).
+
+Add short comments for non-obvious logic.
+
+Use doc-comments for services and complex modules.
+
+Avoid large inline conditionals; break them into smaller methods.
+
+Group similar files logically in folders (e.g., app/services/payments/, app/forms/users/).
+
+Keep your tests fast, isolated, and easy to read.
+
+Avoid side effects in model callbacks unless absolutely necessary.
