@@ -1,0 +1,76 @@
+<!-- Chart Container with Controller -->
+<div 
+  class="w-full"
+  data-controller="chart"
+  data-chart-symbol-value="<%= @symbol || 'AAPL' %>"
+  data-chart-timeframe-value="<%= @timeframe || '5m' %>"
+>
+  <div class="flex justify-between items-center mb-4">
+    <div>
+      <h3 class="text-base font-medium text-gray-900"><%= @symbol || 'AAPL' %></h3>
+      <p class="text-sm text-gray-500"><%= @timeframe || '5Min' %> Timeframe</p>
+    </div>
+    <div class="flex items-center space-x-4">
+      <!-- EMA Legend -->
+      <div class="flex items-center space-x-3 text-xs">
+        <div class="flex items-center">
+          <div class="w-3 h-0.5 bg-blue-500 mr-1"></div>
+          <span class="text-gray-600">EMA-5</span>
+        </div>
+        <div class="flex items-center">
+          <div class="w-3 h-0.5 bg-orange-500 mr-1"></div>
+          <span class="text-gray-600">EMA-8</span>
+        </div>
+        <div class="flex items-center">
+          <div class="w-3 h-0.5 bg-pink-500 mr-1"></div>
+          <span class="text-gray-600">EMA-22</span>
+        </div>
+      </div>
+      
+      <!-- Timeframe Selector -->
+      <div class="inline-flex shadow-sm rounded-md">
+        <!-- Test Button -->
+        <button 
+          type="button" 
+          data-action="click->chart#testButtonClick" 
+          class="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 border border-yellow-300 rounded-l-md mr-2"
+        >
+          TEST
+        </button>
+        
+        <% %w[5m 15m 1h 1d].each_with_index do |tf, index| %>
+          <% is_active = tf == (@timeframe || '5m') %>
+          <% button_classes = "px-3 py-1.5 text-xs font-medium border border-gray-300 hover:bg-gray-50 focus:z-10 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" %>
+          <% if index == 0 %>
+            <% button_classes += " rounded-l-md" %>
+          <% elsif index == 3 %>
+            <% button_classes += " rounded-r-md" %>
+          <% else %>
+            <% button_classes += " border-t border-b" %>
+          <% end %>
+          <% if is_active %>
+            <% button_classes += " bg-blue-50 text-blue-700 border-blue-500" %>
+          <% else %>
+            <% button_classes += " text-gray-700 bg-white" %>
+          <% end %>
+          
+          <button 
+            type="button" 
+            data-action="click->chart#changeTimeframe" 
+            data-timeframe="<%= tf %>" 
+            data-debug-tf="<%= tf %>"
+            class="<%= button_classes %>"
+            onclick="console.log('Raw button click for <%= tf %>')"
+          >
+            <%= tf.upcase %>
+          </button>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Chart Display Area -->
+  <div class="w-full h-96 border border-gray-200 rounded-lg bg-white">
+    <div data-chart-target="container" class="w-full h-full"></div>
+  </div>
+</div> 

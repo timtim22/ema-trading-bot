@@ -1,0 +1,205 @@
+<!-- Bot Settings Header -->
+<div class="mb-6 sm:mb-8">
+  <div class="md:flex md:items-center md:justify-between">
+    <div class="flex-1 min-w-0">
+      <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Bot Configuration</h1>
+      <p class="mt-1 text-sm text-gray-500">Configure your EMA trading bot settings and parameters</p>
+    </div>
+    <div class="mt-4 flex md:mt-0 md:ml-4">
+      <%= link_to dashboard_path, class: "inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 hover:shadow-md" do %>
+        <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+        </svg>
+        Back to Dashboard
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Form -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden" data-controller="bot-settings">
+  <div class="border-b border-gray-200 px-4 sm:px-6 py-4">
+    <h2 class="text-lg font-semibold text-gray-900">Trading Parameters</h2>
+    <p class="mt-1 text-sm text-gray-500">Adjust your bot's trading behavior and risk management settings</p>
+  </div>
+  
+  <div class="p-4 sm:p-6">
+    <!-- Flash Messages -->
+    <div data-bot-settings-target="flashMessage" class="hidden mb-6">
+      <div class="rounded-md p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg data-bot-settings-target="flashIcon" class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <!-- Icon will be set by JavaScript -->
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p data-bot-settings-target="flashText" class="text-sm font-medium">
+              <!-- Message will be set by JavaScript -->
+            </p>
+          </div>
+          <div class="ml-auto pl-3">
+            <div class="-mx-1.5 -my-1.5">
+              <button data-action="click->bot-settings#hideFlash" class="inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2">
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%= form_with model: @bot_setting, url: bot_settings_path, method: :patch, local: false, data: { action: "submit->bot-settings#submitForm" }, class: "space-y-6" do |form| %>
+      
+      <!-- Symbols Selection -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+          Trading Symbols
+          <span class="text-red-500">*</span>
+        </label>
+        <p class="text-xs text-gray-500 mb-3">
+          Select one or more symbols to trade. You can switch between symbols in the dashboard.
+        </p>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <% @available_symbols.each do |symbol| %>
+            <label class="relative flex items-center">
+              <%= check_box_tag "bot_setting[symbols][]", symbol, @bot_setting.symbols_list.include?(symbol), 
+                    class: "sr-only peer", 
+                    data: { action: "change->bot-settings#updateSymbolCount" } %>
+              <div class="w-full px-3 py-2 text-sm font-medium text-center border border-gray-300 rounded-lg cursor-pointer 
+                          peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700
+                          hover:bg-gray-50 transition-all duration-200">
+                <%= symbol %>
+              </div>
+            </label>
+          <% end %>
+        </div>
+        <p class="mt-2 text-xs text-gray-500">
+          Selected: <span data-bot-settings-target="symbolCount"><%= @bot_setting.symbols_list.length %></span> symbol(s)
+          <% if @bot_setting.symbols_list.length > 1 %>
+            <span class="text-blue-600">• Dashboard will show a symbol selector</span>
+          <% end %>
+        </p>
+      </div>
+
+      <!-- Timeframe -->
+      <div>
+        <label for="bot_setting_timeframe" class="block text-sm font-medium text-gray-700 mb-2">
+          Timeframe
+          <span class="text-red-500">*</span>
+        </label>
+        <p class="text-xs text-gray-500 mb-3">Chart timeframe for analysis</p>
+        <%= form.select :timeframe, options_for_select(@timeframes, @bot_setting.timeframe), 
+              { prompt: "Select timeframe" }, 
+              { class: "block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" } %>
+      </div>
+
+      <!-- Risk Management -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Profit Percentage -->
+        <div>
+          <label for="bot_setting_profit_percentage" class="block text-sm font-medium text-gray-700 mb-2">
+            Take Profit %
+            <span class="text-red-500">*</span>
+          </label>
+          <p class="text-xs text-gray-500 mb-3">Profit target percentage</p>
+          <div class="relative">
+            <%= form.number_field :profit_percentage, 
+                  step: 0.1, min: 0.1, max: 100,
+                  class: "block w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                  placeholder: "2.0" %>
+            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <span class="text-gray-500 text-sm">%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loss Percentage -->
+        <div>
+          <label for="bot_setting_loss_percentage" class="block text-sm font-medium text-gray-700 mb-2">
+            Stop Loss %
+            <span class="text-red-500">*</span>
+          </label>
+          <p class="text-xs text-gray-500 mb-3">Maximum loss percentage</p>
+          <div class="relative">
+            <%= form.number_field :loss_percentage, 
+                  step: 0.1, min: 0.1, max: 100,
+                  class: "block w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                  placeholder: "1.0" %>
+            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <span class="text-gray-500 text-sm">%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Confirmation Bars -->
+        <div>
+          <label for="bot_setting_confirmation_bars" class="block text-sm font-medium text-gray-700 mb-2">
+            Confirmation Bars
+            <span class="text-red-500">*</span>
+          </label>
+          <p class="text-xs text-gray-500 mb-3">Bars to confirm signal</p>
+          <%= form.number_field :confirmation_bars, 
+                min: 1, max: 10,
+                class: "block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm",
+                placeholder: "3" %>
+        </div>
+      </div>
+
+      <!-- Current Settings Summary -->
+      <div class="bg-gray-50 rounded-lg p-4">
+        <h3 class="text-sm font-medium text-gray-900 mb-3">Current Settings Summary</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+          <div>
+            <span class="text-gray-500">Symbols:</span>
+            <span class="ml-1 font-medium text-gray-900" data-bot-settings-target="currentSymbols">
+              <%= @bot_setting.symbols_display %>
+            </span>
+          </div>
+          <div>
+            <span class="text-gray-500">Timeframe:</span>
+            <span class="ml-1 font-medium text-gray-900" data-bot-settings-target="currentTimeframe">
+              <%= @bot_setting.timeframe_display %>
+            </span>
+          </div>
+          <div>
+            <span class="text-gray-500">Take Profit:</span>
+            <span class="ml-1 font-medium text-green-600" data-bot-settings-target="currentProfit">
+              <%= @bot_setting.profit_percentage %>%
+            </span>
+          </div>
+          <div>
+            <span class="text-gray-500">Stop Loss:</span>
+            <span class="ml-1 font-medium text-red-600" data-bot-settings-target="currentLoss">
+              <%= @bot_setting.loss_percentage %>%
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-3 sm:space-y-0 pt-6 border-t border-gray-200">
+        <div class="text-sm text-gray-500">
+          <svg class="inline h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+          </svg>
+          Changes will be saved automatically and applied to future trades
+        </div>
+        <div class="flex space-x-3">
+          <%= link_to "Cancel", dashboard_path, 
+                class: "inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200" %>
+          <button type="submit" 
+                  data-bot-settings-target="submitButton"
+                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+            <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+            </svg>
+            <span data-bot-settings-target="submitText">Save Settings</span>
+          </button>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div> 

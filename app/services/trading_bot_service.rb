@@ -4,13 +4,15 @@
 class TradingBotService
   attr_reader :last_error, :symbol, :timeframe
   
-  def initialize(symbol = nil, timeframe = nil)
+  def initialize(symbol = nil, timeframe = nil, user = nil)
     @symbol = symbol || ENV.fetch("DEFAULT_SYMBOL", "AAPL")
     @timeframe = timeframe || ENV.fetch("DEFAULT_TIMEFRAME", "5Min")
     @trade_amount = ENV.fetch("TRADE_AMOUNT", "1000").to_f
-    @profit_percentage = ENV.fetch("PROFIT_PERCENTAGE", "1").to_f / 100
-    @loss_percentage = ENV.fetch("LOSS_PERCENTAGE", "1").to_f / 100
+    @profit_percentage = ENV.fetch("PROFIT_PERCENTAGE", "1").to_f
+    @loss_percentage = ENV.fetch("LOSS_PERCENTAGE", "1").to_f
+    @user = user
     @alpaca_service = AlpacaDataService.new
+    @order_service = OrderService.new
   end
   
   # Run the full trading process: fetch data, calculate EMAs, check for signals, execute trades
@@ -45,14 +47,57 @@ class TradingBotService
   #
   # @return [Hash, nil] market data or nil if fetch failed
   def fetch_market_data
-    data = @alpaca_service.fetch_ema_data(@symbol, timeframe: @timeframe)
+    data = @alpaca_service.fetch_closes_with_timestamp(@symbol, timeframe: @timeframe)
     
     unless data
-      @last_error = "Failed to fetch market data: #{@alpaca_service.last_error}"
+      market_hours_error = check_market_hours
+      if market_hours_error
+        @last_error = market_hours_error
+      else
+        @last_error = "Failed to fetch market data: #{@alpaca_service.last_error || 'Unknown data feed issue'}"
+      end
+      Rails.logger.warn(@last_error)
+      return nil
+    end
+    
+    # Handle empty data case
+    if data[:closes].nil? || data[:closes].empty?
+      market_hours_error = check_market_hours
+      if market_hours_error
+        @last_error = market_hours_error
+      else
+        @last_error = "No price data returned for #{@symbol}. Possible data feed issue."
+      end
+      Rails.logger.warn(@last_error)
       return nil
     end
     
     data
+  end
+  
+  # Check if current time is within market hours
+  #
+  # @return [String, nil] error message if outside market hours, nil otherwise
+  def check_market_hours
+    current_time = Time.current.in_time_zone('America/New_York')
+    current_wday = current_time.wday
+    
+    # Weekend check (0 = Sunday, 6 = Saturday)
+    if current_wday == 0 || current_wday == 6
+      return "Outside market hours: weekend"
+    end
+    
+    # Regular market hours are 9:30 AM to 4:00 PM ET
+    market_open = current_time.change(hour: 9, min: 30)
+    market_close = current_time.change(hour: 16, min: 0)
+    
+    if current_time < market_open
+      return "Outside market hours: before market open (9:30 AM ET)"
+    elsif current_time > market_close
+      return "Outside market hours: after market close (4:00 PM ET)"
+    end
+    
+    nil
   end
   
   # Calculate EMAs from the provided closing prices
@@ -62,28 +107,22 @@ class TradingBotService
   def calculate_emas(closes)
     return nil if closes.nil? || closes.empty?
     
-    # Generate arrays of EMA values (will have fewer elements than closes)
-    ema5_values = []
-    ema8_values = []
-    ema22_values = []
+    # Use the EmaCalculatorService to calculate all EMAs in one call
+    periods = [5, 8, 22]
+    ema_data = EmaCalculatorService.calculate_ema_series(closes, periods)
     
-    # Calculate for each window to get the full series of EMA values
-    # Start with enough candles to calculate the longer EMA (22)
-    (22..closes.length).each do |i|
-      window = closes[0...i]
-      ema5_values << EmaCalculatorService.calculate_ema(window, 5)
-      ema8_values << EmaCalculatorService.calculate_ema(window, 8)
-      ema22_values << EmaCalculatorService.calculate_ema(window, 22)
-    end
+    return nil if ema_data.empty?
     
     {
-      ema5_values: ema5_values,
-      ema8_values: ema8_values,
-      ema22_values: ema22_values,
-      # Most recent values
-      ema5: ema5_values.last,
-      ema8: ema8_values.last,
-      ema22: ema22_values.last
+      # Individual EMA values for the most recent price
+      ema5: ema_data[5],
+      ema8: ema_data[8],
+      ema22: ema_data[22],
+      
+      # Arrays of EMA values for trend analysis
+      ema5_values: ema_data[:values][5],
+      ema8_values: ema_data[:values][8],
+      ema22_values: ema_data[:values][22]
     }
   end
   
@@ -130,27 +169,39 @@ class TradingBotService
   # @return [Position] the created position
   def execute_trade
     # Check if we already have an open position for this symbol
-    return if Position.active.for_symbol(@symbol).exists?
+    return if Position.active.for_symbol(@symbol).user_scope(@user).exists?
     
-    # Get the current price (latest close)
-    latest_data = @alpaca_service.fetch_bars(@symbol, limit: 1)
-    return unless latest_data
-    
-    latest_close = latest_data.dig("bars", 0, "c")
-    return unless latest_close
-    
-    # Create the position
-    position = Position.create!(
-      user: User.first, # You might want a more sophisticated way to determine the user
-      symbol: @symbol,
-      amount: @trade_amount,
-      entry_price: latest_close,
-      entry_time: Time.current,
-      status: 'open'
+    # Place the actual order via Alpaca API
+    order_result = @order_service.place_buy_order_with_safety(
+      @symbol,
+      @trade_amount,
+      profit_percent: @profit_percentage,
+      loss_percent: @loss_percentage
     )
     
-    # In a real implementation, this is where you'd place the actual order with Alpaca
-    # and update the position with the actual execution details
+    return unless order_result
+    
+    # Create the position in our database
+    position = Position.create!(
+      user: @user,
+      symbol: @symbol,
+      amount: @trade_amount,
+      entry_price: order_result[:fill_price] || 0.1,
+      entry_time: Time.current,
+      status: order_result[:status] == 'filled' ? 'open' : 'pending',
+      primary_order_id: order_result[:primary_order_id],
+      take_profit_order_id: order_result[:take_profit_order_id],
+      stop_loss_order_id: order_result[:stop_loss_order_id],
+      fill_qty: order_result[:fill_qty],
+      fill_notional: order_result[:fill_price] ? (order_result[:fill_qty] * order_result[:fill_price]) : nil
+    )
+    
+    # If order is not filled immediately, set up a job to check status later
+    if position.status == 'pending'
+      # This would be implemented as a background job in a real application
+      # CheckOrderStatusJob.perform_later(position.id, order_result[:primary_order_id])
+      Rails.logger.info("Order #{order_result[:primary_order_id]} is pending, will check status later")
+    end
     
     position
   end
@@ -161,6 +212,7 @@ class TradingBotService
   def check_exits
     # Get all active positions for the symbol
     positions = Position.active.for_symbol(@symbol)
+    positions = positions.where(user: @user) if @user
     return false unless positions.exists?
     
     # Get the current price

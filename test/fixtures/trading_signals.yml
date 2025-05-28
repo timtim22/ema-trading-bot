@@ -1,0 +1,21 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  symbol: MyString
+  signal_type: MyString
+  price: 9.99
+  ema5: 9.99
+  ema8: 9.99
+  ema22: 9.99
+  timestamp: 2025-05-28 11:49:15
+  user: one
+
+two:
+  symbol: MyString
+  signal_type: MyString
+  price: 9.99
+  ema5: 9.99
+  ema8: 9.99
+  ema22: 9.99
+  timestamp: 2025-05-28 11:49:15
+  user: two

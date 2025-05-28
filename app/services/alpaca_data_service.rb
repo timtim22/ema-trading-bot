@@ -19,13 +19,35 @@ class AlpacaDataService
   # @param from [String, nil] start date/time in ISO 8601 format
   # @param to [String, nil] end date/time in ISO 8601 format
   # @return [Hash, nil] parsed response data or nil if the request failed
-  def fetch_bars(symbol, timeframe: "5Min", limit: 50, from: '2025-05-13T13:25:00Z', to: '2025-05-13T14:30:00Z')
+  def fetch_bars(symbol,
+                 timeframe: ENV.fetch("POLL_TIMEFRAME") || "5Min",
+                 limit: ENV.fetch("POLL_LIMIT") || 50,
+                 from: nil,
+                 to: nil)
+    # Use historical data from a specific time range that should be accessible
+    # Common free tier allows access to data that's not recent
+    if from.nil? && to.nil?
+      # Use data from 2023 which should be accessible on most plans
+      to = "2025-05-28T16:00:00Z"
+      from = "2025-05-27T09:30:00Z"
+    end
+    
     params = { timeframe: timeframe, limit: limit }
     params[:start] = from if from
     params[:end] = to if to
 
     response = connection.get("stocks/#{symbol}/bars", params)
     @last_response = response
+    
+    # Log rate limit information
+    if response.headers['x-ratelimit-remaining']
+      Rails.logger.info("Alpaca API Rate Limit: #{response.headers['x-ratelimit-remaining']}/#{response.headers['x-ratelimit-limit']} requests remaining")
+      
+      # Alert if getting low on remaining requests
+      if response.headers['x-ratelimit-remaining'].to_i < 10
+        Rails.logger.warn("Alpaca API Rate Limit Warning: Only #{response.headers['x-ratelimit-remaining']} requests remaining!")
+      end
+    end
     
     if response.success?
       JSON.parse(response.body)
@@ -42,30 +64,43 @@ class AlpacaDataService
   # @param timeframe [String] the time interval (e.g., "5Min", "1D")
   # @param limit [Integer] maximum number of bars to return
   # @return [Array<Float>, nil] array of closing prices or nil if the request failed
-  def fetch_closes(symbol, timeframe: "5Min", limit: 22)
+  def fetch_closes(symbol, timeframe: "5Min", limit: 50)
     data = fetch_bars(symbol, timeframe: timeframe, limit: limit)
     return nil unless data
     
-    data.fetch("bars", []).map { |bar| bar["c"] }
+    bars = data["bars"]
+    if bars.nil?
+      @last_error = "No bars returned for #{symbol}. Possible market closure or data issue."
+      return nil
+    end
+    
+    bars.map { |bar| bar["c"] }
   end
   
-  # Fetch EMA data for a symbol
-  # Note: This simply returns the raw closing prices - EMAs need to be calculated or obtained elsewhere
+  # Fetch closing prices with timestamp
   #
   # @param symbol [String] the stock symbol (e.g., "AAPL") 
   # @param timeframe [String] the time interval (e.g., "5Min", "1D")
-  # @return [Hash, nil] hash with closes array, or nil on failure
-  def fetch_ema_data(symbol, timeframe: "5Min")
-    # We need at least 22 bars to calculate EMA-22, plus additional for more accuracy
-    # Adding extra bars for more accurate calculation
-    closes = fetch_closes(symbol, timeframe: timeframe, limit: 50)
-    return nil unless closes
+  # @param limit [Integer] maximum number of bars to return
+  # @return [Hash, nil] hash with close prices and timestamp
+  def fetch_closes_with_timestamp(symbol, timeframe: ENV["POLL_TIMEFRAME"], limit: ENV["POLL_LIMIT"])
+    data = fetch_bars(symbol, timeframe: timeframe, limit: limit)
+    return nil unless data
+    
+    bars = data["bars"]
+    return nil if bars.nil? || bars.empty?
+    
+    # Extract closes
+    closes = bars.map { |bar| bar["c"] }
+    
+    # Use the timestamp from the last (most recent) bar
+    last_bar_time = Time.parse(bars.last["t"]) rescue Time.current
     
     {
       symbol: symbol,
       timeframe: timeframe,
       closes: closes,
-      timestamp: Time.current
+      timestamp: last_bar_time
     }
   end
   
@@ -105,6 +140,16 @@ class AlpacaDataService
   rescue => e
     Rails.logger.error("Failed to save EMA readings: #{e.message}")
     false
+  end
+  
+  def rate_limit_info
+    return {} unless @last_response
+    
+    {
+      remaining: @last_response.headers['x-ratelimit-remaining'],
+      limit: @last_response.headers['x-ratelimit-limit'],
+      reset: @last_response.headers['x-ratelimit-reset'],
+    }
   end
   
   private

@@ -31,6 +31,9 @@ gem "solid_cable"
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 
+# API client for market data
+gem "httparty"
+
 # Deploy this application anywhere as a Docker container [https://kamal-deploy.org]
 gem "kamal", require: false
 
@@ -44,6 +47,12 @@ gem "devise"
 gem 'dotenv-rails'
 gem "alpaca-trade-api"
 gem 'pry'
+
+# Add sidekiq for background job processing
+gem 'sidekiq'
+
+# Add Redis for Sidekiq
+gem 'redis'
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
@@ -66,3 +75,5 @@ group :test do
   gem "capybara"
   gem "selenium-webdriver"
 end
+
+gem "tailwindcss-rails", "~> 4.2"

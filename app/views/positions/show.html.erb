@@ -1,0 +1,164 @@
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">Position Details</h1>
+        <p class="mt-2 text-gray-600"><%= @position.symbol %> - <%= @position.status.humanize %></p>
+      </div>
+      <div class="flex space-x-3">
+        <%= link_to "Back to Positions", positions_path, class: "inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm transition-all duration-200" %>
+        <%= link_to "Dashboard", dashboard_path, class: "inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm transition-all duration-200" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Position Overview -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div class="border-b border-gray-200 px-6 py-4">
+        <h2 class="text-lg font-semibold text-gray-900">Position Overview</h2>
+      </div>
+      <div class="p-6">
+        <dl class="space-y-4">
+          <div class="flex justify-between">
+            <dt class="text-sm font-medium text-gray-600">Symbol:</dt>
+            <dd class="text-sm font-mono text-gray-900"><%= @position.symbol %></dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-sm font-medium text-gray-600">Status:</dt>
+            <dd class="text-sm">
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= @position.status == 'open' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' %>">
+                <span class="w-2 h-2 <%= @position.status == 'open' ? 'bg-green-400' : 'bg-gray-400' %> rounded-full mr-1.5"></span>
+                <%= @position.status.humanize %>
+              </span>
+            </dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-sm font-medium text-gray-600">Amount:</dt>
+            <dd class="text-sm font-mono text-gray-900">$<%= number_with_precision(@position.amount, precision: 2) %></dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-sm font-medium text-gray-600">Shares:</dt>
+            <dd class="text-sm font-mono text-gray-900"><%= @position.shares_quantity %></dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-sm font-medium text-gray-600">Entry Time:</dt>
+            <dd class="text-sm text-gray-900"><%= @position.entry_time&.strftime("%B %d, %Y at %I:%M %p") || "N/A" %></dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+
+    <!-- Price Information -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden" data-controller="positions" data-positions-symbol-value="<%= @position.symbol %>">
+      <div class="border-b border-gray-200 px-6 py-4">
+        <h2 class="text-lg font-semibold text-gray-900">Price Information</h2>
+      </div>
+      <div class="p-6">
+        <dl class="space-y-4">
+          <div class="flex justify-between">
+            <dt class="text-sm font-medium text-gray-600">Entry Price:</dt>
+            <dd class="text-sm font-mono text-gray-900">$<%= number_with_precision(@position.entry_price, precision: 2) %></dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-sm font-medium text-gray-600">Current Price:</dt>
+            <dd class="text-sm font-mono text-gray-900" data-positions-target="currentPrice" data-symbol="<%= @position.symbol %>">
+              <% if @position.current_price.present? %>
+                $<%= number_with_precision(@position.current_price, precision: 2) %>
+              <% else %>
+                <span class="text-gray-400">Connecting...</span>
+              <% end %>
+            </dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-sm font-medium text-gray-600">Take Profit:</dt>
+            <dd class="text-sm font-mono text-gray-900">
+              <% if @position.take_profit.present? %>
+                $<%= number_with_precision(@position.take_profit, precision: 2) %>
+              <% else %>
+                <span class="text-gray-400">Not set</span>
+              <% end %>
+            </dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-sm font-medium text-gray-600">Stop Loss:</dt>
+            <dd class="text-sm font-mono text-gray-900">
+              <% if @position.stop_loss.present? %>
+                $<%= number_with_precision(@position.stop_loss, precision: 2) %>
+              <% else %>
+                <span class="text-gray-400">Not set</span>
+              <% end %>
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+
+    <!-- P&L Information -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div class="border-b border-gray-200 px-6 py-4">
+        <h2 class="text-lg font-semibold text-gray-900">Profit & Loss</h2>
+      </div>
+      <div class="p-6">
+        <dl class="space-y-4">
+          <div class="flex justify-between">
+            <dt class="text-sm font-medium text-gray-600">Unrealized P/L:</dt>
+            <dd class="text-sm font-mono <%= @position.pnl_color_class %>" data-positions-target="pnl" data-symbol="<%= @position.symbol %>">
+              <%= @position.formatted_pnl %>
+            </dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-sm font-medium text-gray-600">Unrealized P/L ($):</dt>
+            <dd class="text-sm font-mono <%= @position.pnl_color_class %>">
+              $<%= number_with_precision(@position.unrealized_pnl, precision: 2) %>
+            </dd>
+          </div>
+          <% if @position.exit_price.present? %>
+            <div class="flex justify-between">
+              <dt class="text-sm font-medium text-gray-600">Exit Price:</dt>
+              <dd class="text-sm font-mono text-gray-900">$<%= number_with_precision(@position.exit_price, precision: 2) %></dd>
+            </div>
+            <div class="flex justify-between">
+              <dt class="text-sm font-medium text-gray-600">Realized P/L:</dt>
+              <dd class="text-sm font-mono <%= @position.profit_loss.to_f >= 0 ? 'text-green-600' : 'text-red-600' %>">
+                $<%= number_with_precision(@position.profit_loss || 0, precision: 2) %>
+              </dd>
+            </div>
+          <% end %>
+        </dl>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div class="border-b border-gray-200 px-6 py-4">
+        <h2 class="text-lg font-semibold text-gray-900">Actions</h2>
+      </div>
+      <div class="p-6">
+        <% if @position.status == 'open' %>
+          <div class="space-y-3">
+            <button data-action="click->positions#closePosition" data-position-id="<%= @position.id %>" class="w-full inline-flex justify-center items-center px-4 py-2.5 text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 shadow-sm transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+              <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+              </svg>
+              <span data-positions-target="closeButtonText">Close Position</span>
+            </button>
+            <button class="w-full inline-flex justify-center items-center px-4 py-2.5 text-sm font-medium rounded-lg text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm transition-all duration-200">
+              <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+              </svg>
+              Edit Position
+            </button>
+          </div>
+        <% else %>
+          <div class="text-center text-gray-500">
+            <p class="text-sm">This position has been closed.</p>
+            <% if @position.exit_time.present? %>
+              <p class="text-xs mt-1">Closed on <%= @position.exit_time.strftime("%B %d, %Y at %I:%M %p") %></p>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

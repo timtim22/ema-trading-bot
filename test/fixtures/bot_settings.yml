@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  symbols: MyText
+  timeframe: MyString
+  profit_percentage: 9.99
+  loss_percentage: 9.99
+  confirmation_bars: 1
+
+two:
+  user: two
+  symbols: MyText
+  timeframe: MyString
+  profit_percentage: 9.99
+  loss_percentage: 9.99
+  confirmation_bars: 1
