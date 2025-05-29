@@ -1,0 +1,353 @@
+<!-- Trading History Header -->
+<div class="mb-6 sm:mb-8">
+  <div class="md:flex md:items-center md:justify-between">
+    <div class="flex-1 min-w-0">
+      <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Trading History</h1>
+      <p class="mt-1 text-sm text-gray-500">View and analyze your completed trades</p>
+    </div>
+    <div class="mt-4 flex md:mt-0 md:ml-4">
+      <%= link_to dashboard_path, class: "inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 hover:shadow-md" do %>
+        <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+        </svg>
+        Back to Dashboard
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <!-- Total Trades -->
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="flex items-center">
+      <div class="flex-shrink-0">
+        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+        </div>
+      </div>
+      <div class="ml-4">
+        <p class="text-sm font-medium text-gray-600">Total Trades</p>
+        <p class="text-2xl font-bold text-gray-900"><%= @total_positions %></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Total P/L -->
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="flex items-center">
+      <div class="flex-shrink-0">
+        <div class="w-8 h-8 <%= @total_profit_loss >= 0 ? 'bg-green-100' : 'bg-red-100' %> rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 <%= @total_profit_loss >= 0 ? 'text-green-600' : 'text-red-600' %>" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <% if @total_profit_loss >= 0 %>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+            <% else %>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/>
+            <% end %>
+          </svg>
+        </div>
+      </div>
+      <div class="ml-4">
+        <p class="text-sm font-medium text-gray-600">Total P/L</p>
+        <p class="text-2xl font-bold <%= @total_profit_loss >= 0 ? 'text-green-600' : 'text-red-600' %>">
+          <%= @total_profit_loss >= 0 ? '+' : '' %>$<%= number_with_precision(@total_profit_loss, precision: 2) %>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Win Rate -->
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="flex items-center">
+      <div class="flex-shrink-0">
+        <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+      </div>
+      <div class="ml-4">
+        <p class="text-sm font-medium text-gray-600">Win Rate</p>
+        <p class="text-2xl font-bold text-gray-900"><%= @win_rate %>%</p>
+        <p class="text-xs text-gray-500"><%= @profitable_trades %>W / <%= @losing_trades %>L</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Average Trade -->
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="flex items-center">
+      <div class="flex-shrink-0">
+        <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
+          </svg>
+        </div>
+      </div>
+      <div class="ml-4">
+        <p class="text-sm font-medium text-gray-600">Avg Trade</p>
+        <p class="text-2xl font-bold text-gray-900">
+          <% avg_trade = @total_positions > 0 ? (@total_profit_loss / @total_positions) : 0 %>
+          <%= avg_trade >= 0 ? '+' : '' %>$<%= number_with_precision(avg_trade, precision: 2) %>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6" data-controller="trading-history">
+  <div class="border-b border-gray-200 px-4 sm:px-6 py-4">
+    <h2 class="text-lg font-semibold text-gray-900">Filters</h2>
+  </div>
+  <div class="p-4 sm:p-6">
+    <%= form_with url: trades_history_path, method: :get, local: true, class: "space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:gap-4" do |form| %>
+      <!-- Date Range -->
+      <div>
+        <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+        <%= form.date_field :start_date, 
+              value: params[:start_date], 
+              class: "block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %>
+      </div>
+      
+      <div>
+        <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+        <%= form.date_field :end_date, 
+              value: params[:end_date], 
+              class: "block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" %>
+      </div>
+      
+      <!-- Symbol Filter -->
+      <div>
+        <label for="symbol" class="block text-sm font-medium text-gray-700 mb-2">Symbol</label>
+        <%= form.select :symbol, 
+              options_for_select([['All Symbols', 'all']] + current_user.positions.completed.distinct.pluck(:symbol).map { |s| [s, s] }, params[:symbol]),
+              {},
+              { class: "block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" } %>
+      </div>
+      
+      <!-- Status Filter -->
+      <div>
+        <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Result</label>
+        <%= form.select :status, 
+              options_for_select([
+                ['All Results', 'all'],
+                ['Profitable', 'closed_profit'],
+                ['Loss', 'closed_loss']
+              ], params[:status]),
+              {},
+              { class: "block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" } %>
+      </div>
+      
+      <!-- Filter Actions -->
+      <div class="sm:col-span-2 lg:col-span-4 flex flex-col sm:flex-row gap-3 pt-4 sm:pt-0">
+        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
+          <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" />
+          </svg>
+          Apply Filters
+        </button>
+        <%= link_to trades_history_path, class: "inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200" do %>
+          <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+          </svg>
+          Clear Filters
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<!-- Trading History Table -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+  <div class="border-b border-gray-200 px-4 sm:px-6 py-4">
+    <h2 class="text-lg font-semibold text-gray-900">
+      Trade History 
+      <span class="text-sm font-normal text-gray-500">(<%= @total_positions %> total trades)</span>
+    </h2>
+  </div>
+  
+  <% if @positions.any? %>
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Symbol</th>
+            <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entry</th>
+            <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Exit</th>
+            <th scope="col" class="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entry Time</th>
+            <th scope="col" class="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Exit Time</th>
+            <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P/L</th>
+            <th scope="col" class="hidden lg:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P/L %</th>
+            <th scope="col" class="hidden lg:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Exit Reason</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <% @positions.each do |position| %>
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0 h-8 w-8">
+                    <div class="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <span class="text-xs font-bold text-blue-600"><%= position.symbol %></span>
+                    </div>
+                  </div>
+                  <div class="ml-3">
+                    <div class="text-sm font-medium text-gray-900"><%= position.symbol %></div>
+                    <div class="text-xs text-gray-500"><%= number_with_precision(position.shares_quantity, precision: 4) %> shares</div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                $<%= number_with_precision(position.entry_price, precision: 2) %>
+              </td>
+              <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                $<%= number_with_precision(position.exit_price, precision: 2) %>
+              </td>
+              <td class="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <% if position.entry_time %>
+                  <div><%= position.entry_time.strftime("%m/%d/%Y") %></div>
+                  <div class="text-xs text-gray-400"><%= position.entry_time.strftime("%I:%M %p") %></div>
+                <% else %>
+                  <span class="text-gray-400">--</span>
+                <% end %>
+              </td>
+              <td class="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <% if position.exit_time %>
+                  <div><%= position.exit_time.strftime("%m/%d/%Y") %></div>
+                  <div class="text-xs text-gray-400"><%= position.exit_time.strftime("%I:%M %p") %></div>
+                <% else %>
+                  <span class="text-gray-400">--</span>
+                <% end %>
+              </td>
+              <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-mono <%= position.realized_pnl_color_class %>">
+                <%= position.profit_loss && position.profit_loss >= 0 ? '+' : '' %>$<%= number_with_precision(position.profit_loss || 0, precision: 2) %>
+              </td>
+              <td class="hidden lg:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-mono <%= position.realized_pnl_color_class %>">
+                <%= position.formatted_realized_pnl %>
+              </td>
+              <td class="hidden lg:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <% if position.exit_reason.present? %>
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= position.exit_reason == 'take_profit' ? 'bg-green-100 text-green-800' : position.exit_reason == 'stop_loss' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800' %>">
+                    <%= position.exit_reason.humanize %>
+                  </span>
+                <% else %>
+                  <span class="text-gray-400">--</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Pagination -->
+    <% if @positions.respond_to?(:current_page) %>
+      <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+        <div class="flex-1 flex justify-between sm:hidden">
+          <% if @positions.prev_page %>
+            <%= link_to "Previous", trades_history_path(page: @positions.prev_page, **request.query_parameters.except(:page)), class: "relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+          <% end %>
+          <% if @positions.next_page %>
+            <%= link_to "Next", trades_history_path(page: @positions.next_page, **request.query_parameters.except(:page)), class: "ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+          <% end %>
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+          <div>
+            <p class="text-sm text-gray-700">
+              Showing
+              <span class="font-medium"><%= (@positions.current_page - 1) * @positions.limit_value + 1 %></span>
+              to
+              <span class="font-medium"><%= [@positions.current_page * @positions.limit_value, @total_positions].min %></span>
+              of
+              <span class="font-medium"><%= @total_positions %></span>
+              results
+            </p>
+          </div>
+          <div>
+            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+              <!-- Previous Page Link -->
+              <% if @positions.prev_page %>
+                <%= link_to trades_history_path(page: @positions.prev_page, **request.query_parameters.except(:page)), class: "relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" do %>
+                  <span class="sr-only">Previous</span>
+                  <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                <% end %>
+              <% else %>
+                <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-300 cursor-not-allowed">
+                  <span class="sr-only">Previous</span>
+                  <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                </span>
+              <% end %>
+              
+              <!-- Page Numbers -->
+              <% 
+                start_page = [@positions.current_page - 2, 1].max
+                end_page = [start_page + 4, @positions.total_pages].min
+                start_page = [end_page - 4, 1].max
+              %>
+              
+              <% (start_page..end_page).each do |page| %>
+                <% if page == @positions.current_page %>
+                  <span class="relative inline-flex items-center px-4 py-2 border border-blue-500 bg-blue-50 text-sm font-medium text-blue-600">
+                    <%= page %>
+                  </span>
+                <% else %>
+                  <%= link_to page, trades_history_path(page: page, **request.query_parameters.except(:page)), class: "relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50" %>
+                <% end %>
+              <% end %>
+              
+              <!-- Next Page Link -->
+              <% if @positions.next_page %>
+                <%= link_to trades_history_path(page: @positions.next_page, **request.query_parameters.except(:page)), class: "relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" do %>
+                  <span class="sr-only">Next</span>
+                  <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                  </svg>
+                <% end %>
+              <% else %>
+                <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-300 cursor-not-allowed">
+                  <span class="sr-only">Next</span>
+                  <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                  </svg>
+                </span>
+              <% end %>
+            </nav>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <!-- Empty State -->
+    <div class="text-center py-12">
+      <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+        <path d="M34 40h10v-4a6 6 0 00-10.712-3.714M34 40H14m20 0v-4a9.971 9.971 0 00-.712-3.714M14 40H4v-4a6 6 0 0110.713-3.714M14 40v-4c0-1.313.253-2.566.713-3.714m0 0A10.003 10.003 0 0124 26c4.21 0 7.813 2.602 9.288 6.286M30 14a6 6 0 11-12 0 6 6 0 0112 0zm12 6a4 4 0 11-8 0 4 4 0 018 0zm-28 0a4 4 0 11-8 0 4 4 0 018 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      <h3 class="mt-2 text-sm font-medium text-gray-900">No trading history</h3>
+      <p class="mt-1 text-sm text-gray-500">
+        <% if params[:start_date].present? || params[:end_date].present? || (params[:symbol].present? && params[:symbol] != 'all') || (params[:status].present? && params[:status] != 'all') %>
+          No trades found matching your filters. Try adjusting your search criteria.
+        <% else %>
+          You haven't completed any trades yet. Start trading to see your history here.
+        <% end %>
+      </p>
+      <div class="mt-6">
+        <% if params[:start_date].present? || params[:end_date].present? || (params[:symbol].present? && params[:symbol] != 'all') || (params[:status].present? && params[:status] != 'all') %>
+          <%= link_to trades_history_path, class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" do %>
+            Clear Filters
+          <% end %>
+        <% else %>
+          <%= link_to dashboard_path, class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" do %>
+            Go to Dashboard
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div> 

@@ -1,0 +1,191 @@
+<!-- Help Modal -->
+<div class="fixed inset-0 bg-gray-600 bg-opacity-75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4" data-help-modal-target="modal" data-action="click->help-modal#closeOnBackdrop" tabindex="-1" role="dialog" aria-labelledby="help-modal-title" aria-modal="true">
+  <!-- Modal content -->
+  <div class="bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all max-w-4xl w-full max-h-[90vh] overflow-y-auto sm:p-6" data-action="click->help-modal#preventClose">
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center">
+        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+          <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div class="ml-4">
+          <h3 class="text-lg leading-6 font-medium text-gray-900" id="help-modal-title">
+            EMA Trading Strategy Guide
+          </h3>
+          <p class="text-sm text-gray-500">
+            Understanding our EMA-5/8/22 crossover system
+          </p>
+        </div>
+      </div>
+      <button type="button" class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" data-action="click->help-modal#close">
+        <span class="sr-only">Close</span>
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="max-h-96 overflow-y-auto">
+      <div class="space-y-6">
+        
+        <!-- What are EMAs? -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4">
+          <h4 class="text-base font-semibold text-gray-900 mb-3 flex items-center">
+            <svg class="h-5 w-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+            What are EMAs?
+          </h4>
+          <div class="grid md:grid-cols-3 gap-4 text-sm">
+            <div class="bg-white p-3 rounded-md border-l-4 border-green-400">
+              <div class="font-medium text-green-800">EMA-5</div>
+              <div class="text-gray-600 mt-1">5-period weighted average. Very quick to react to recent price moves.</div>
+            </div>
+            <div class="bg-white p-3 rounded-md border-l-4 border-blue-400">
+              <div class="font-medium text-blue-800">EMA-8</div>
+              <div class="text-gray-600 mt-1">8-period average. Smooths out noise while staying responsive.</div>
+            </div>
+            <div class="bg-white p-3 rounded-md border-l-4 border-purple-400">
+              <div class="font-medium text-purple-800">EMA-22</div>
+              <div class="text-gray-600 mt-1">22-period average. Provides longer-term trend direction.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Crossover Signals -->
+        <div>
+          <h4 class="text-base font-semibold text-gray-900 mb-3 flex items-center">
+            <svg class="h-5 w-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+            </svg>
+            Trading Signals
+          </h4>
+          <div class="grid md:grid-cols-2 gap-4">
+            <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+              <div class="flex items-center mb-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  📈 BULLISH
+                </span>
+              </div>
+              <div class="text-sm text-gray-700">
+                <div class="font-medium mb-1">Buy Signal:</div>
+                <div>EMA-5 crosses above EMA-8 → suggests buyers taking control</div>
+                <div class="text-xs text-gray-500 mt-2">Ideal when EMA-5 > EMA-8 > EMA-22</div>
+              </div>
+            </div>
+            <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+              <div class="flex items-center mb-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                  📉 BEARISH
+                </span>
+              </div>
+              <div class="text-sm text-gray-700">
+                <div class="font-medium mb-1">Sell Signal:</div>
+                <div>EMA-5 crosses below EMA-8 → suggests sellers gaining momentum</div>
+                <div class="text-xs text-gray-500 mt-2">Exit positions to preserve gains</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Entry & Exit Strategy -->
+        <div>
+          <h4 class="text-base font-semibold text-gray-900 mb-3 flex items-center">
+            <svg class="h-5 w-5 text-indigo-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+            </svg>
+            When to Enter & Exit
+          </h4>
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <div class="grid md:grid-cols-2 gap-6">
+              <div>
+                <div class="font-medium text-gray-900 mb-2">🎯 Entry Strategy</div>
+                <ul class="text-sm text-gray-700 space-y-1">
+                  <li>• Wait for EMA-5 to cross above EMA-8</li>
+                  <li>• <strong>3-bar confirmation</strong> to avoid false signals</li>
+                  <li>• Best when all EMAs align (5 > 8 > 22)</li>
+                  <li>• Entry at moment of confirmed crossover</li>
+                </ul>
+              </div>
+              <div>
+                <div class="font-medium text-gray-900 mb-2">🛡️ Exit Strategy</div>
+                <ul class="text-sm text-gray-700 space-y-1">
+                  <li>• <strong>+2% Take-Profit</strong> (default setting)</li>
+                  <li>• <strong>-1% Stop-Loss</strong> to cap losses</li>
+                  <li>• Or when opposite crossover occurs</li>
+                  <li>• Automatic execution via smart orders</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Risk Management -->
+        <div>
+          <h4 class="text-base font-semibold text-gray-900 mb-3 flex items-center">
+            <svg class="h-5 w-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+            Risk Management & Guardrails
+          </h4>
+          <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div class="grid md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <div class="font-medium text-amber-800 mb-1">🎲 Position Sizing</div>
+                <div class="text-gray-700">$1,000 per trade (configurable)</div>
+                <div class="text-xs text-gray-500 mt-1">Market orders in dollar value</div>
+              </div>
+              <div>
+                <div class="font-medium text-amber-800 mb-1">⏱️ Timeframes</div>
+                <div class="text-gray-700">1-min, 5-min, or 15-min charts</div>
+                <div class="text-xs text-gray-500 mt-1">Momentum shifts most visible</div>
+              </div>
+              <div>
+                <div class="font-medium text-amber-800 mb-1">🔍 Confirmation</div>
+                <div class="text-gray-700">3-bar minimum hold</div>
+                <div class="text-xs text-gray-500 mt-1">Reduces false breakouts</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Important Notes -->
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <div class="ml-3">
+              <h3 class="text-sm font-medium text-blue-800">Important Trading Notes</h3>
+              <div class="mt-2 text-sm text-blue-700">
+                <ul class="list-disc list-inside space-y-1">
+                  <li>This bot works best during regular market hours (9:30 AM - 4:00 PM ET)</li>
+                  <li>All settings (profit %, stop-loss %, confirmation bars) are fully configurable</li>
+                  <li>The system maintains a complete audit trail of all decisions and trades</li>
+                  <li>Paper trading mode is recommended for testing new configurations</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-6 pt-4 border-t border-gray-200 flex justify-between items-center">
+      <div class="text-xs text-gray-500">
+        Configure your settings in the <strong>Configuration</strong> page
+      </div>
+      <button type="button" class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" data-action="click->help-modal#close">
+        Got it, thanks!
+      </button>
+    </div>
+  </div>
+</div> 

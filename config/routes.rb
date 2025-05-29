@@ -1,12 +1,32 @@
 require 'sidekiq/web'
 
 Rails.application.routes.draw do
+  # TrackedSymbols routes for symbol management
+  resources :tracked_symbols, only: [:create, :destroy] do
+    member do
+      patch :toggle
+    end
+  end
+  
   # Position management routes
   resources :positions, only: [:index, :show, :create] do
     member do
       post :close_manually
     end
   end
+  
+  # Trading history routes
+  get '/trades/history', to: 'trading_history#index', as: 'trades_history'
+  
+  # Account overview routes
+  get '/account', to: 'account#index', as: 'account'
+  get '/account/refresh', to: 'account#refresh', as: 'account_refresh'
+  
+  # Activity logs routes
+  get '/activity', to: 'activity#index', as: 'activity'
+  get '/activity/stream', to: 'activity#stream', as: 'activity_stream'
+  delete '/activity/clear', to: 'activity#clear', as: 'activity_clear'
+  
   get "home/index"
   devise_for :users
   
@@ -14,10 +34,10 @@ Rails.application.routes.draw do
   get '/dashboard', to: 'dashboard#index'
   
   # Bot state management routes
-  post '/dashboard/bot/start', to: 'dashboard#start_bot'
-  post '/dashboard/bot/stop', to: 'dashboard#stop_bot'
-  get '/dashboard/bot/status', to: 'dashboard#bot_status'
-  get '/dashboard/market_data/:symbol', to: 'dashboard#market_data'
+  post '/dashboard/start_bot', to: 'dashboard#start_bot'
+  post '/dashboard/stop_bot', to: 'dashboard#stop_bot'
+  get '/dashboard/bot_status', to: 'dashboard#bot_status'
+  get '/dashboard/market_data', to: 'dashboard#market_data'
   
   # Bot settings routes
   get '/bot_settings', to: 'bot_settings#index'

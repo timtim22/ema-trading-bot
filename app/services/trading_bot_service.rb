@@ -6,13 +6,27 @@ class TradingBotService
   
   def initialize(symbol = nil, timeframe = nil, user = nil)
     @symbol = symbol || ENV.fetch("DEFAULT_SYMBOL", "AAPL")
-    @timeframe = timeframe || ENV.fetch("DEFAULT_TIMEFRAME", "5Min")
-    @trade_amount = ENV.fetch("TRADE_AMOUNT", "1000").to_f
-    @profit_percentage = ENV.fetch("PROFIT_PERCENTAGE", "1").to_f
-    @loss_percentage = ENV.fetch("LOSS_PERCENTAGE", "1").to_f
     @user = user
+    
+    # Get user-specific settings from database, fallback to ENV/defaults
+    if @user
+      user_settings = BotSetting.for_user(@user)
+      @timeframe = timeframe || user_settings.timeframe || ENV.fetch("DEFAULT_TIMEFRAME", "5Min")
+      @profit_percentage = (user_settings.profit_percentage / 100.0) || ENV.fetch("PROFIT_PERCENTAGE", "1").to_f / 100.0
+      @loss_percentage = (user_settings.loss_percentage / 100.0) || ENV.fetch("LOSS_PERCENTAGE", "1").to_f / 100.0
+      @confirmation_bars = user_settings.confirmation_bars || ENV.fetch("CONFIRMATION_BARS", "3").to_i
+    else
+    @timeframe = timeframe || ENV.fetch("DEFAULT_TIMEFRAME", "5Min")
+      @profit_percentage = ENV.fetch("PROFIT_PERCENTAGE", "1").to_f / 100.0
+      @loss_percentage = ENV.fetch("LOSS_PERCENTAGE", "1").to_f / 100.0
+      @confirmation_bars = ENV.fetch("CONFIRMATION_BARS", "3").to_i
+    end
+    
+    @trade_amount = ENV.fetch("TRADE_AMOUNT", "1000").to_f
     @alpaca_service = AlpacaDataService.new
     @order_service = OrderService.new
+    
+    Rails.logger.info "TradingBotService initialized for #{@symbol}: timeframe=#{@timeframe}, profit=#{(@profit_percentage * 100).round(2)}%, loss=#{(@loss_percentage * 100).round(2)}%, confirmation_bars=#{@confirmation_bars}"
   end
   
   # Run the full trading process: fetch data, calculate EMAs, check for signals, execute trades

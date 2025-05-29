@@ -1,0 +1,374 @@
+<!-- Activity Logs Page -->
+<div class="mb-6 sm:mb-8" data-controller="activity-logs">
+  <div class="md:flex md:items-center md:justify-between">
+    <div class="flex-1 min-w-0">
+      <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Activity Logs</h1>
+      <p class="mt-1 text-sm text-gray-500">
+        System events and activity history
+        <% if @stats[:last_activity] %>
+          • Last activity: <%= time_ago_in_words(@stats[:last_activity]) %> ago
+        <% end %>
+      </p>
+    </div>
+    <div class="mt-4 flex space-x-3 md:mt-0 md:ml-4">
+      <button 
+        data-action="click->activity-logs#toggleAutoRefresh"
+        data-activity-logs-target="autoRefreshButton"
+        class="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 hover:shadow-md">
+        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        <span data-activity-logs-target="autoRefreshText">Auto Refresh: OFF</span>
+      </button>
+      <button 
+        data-action="click->activity-logs#refreshNow"
+        data-activity-logs-target="refreshButton"
+        class="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 hover:shadow-md">
+        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        <span data-activity-logs-target="refreshText">Refresh</span>
+      </button>
+      <%= link_to dashboard_path, class: "inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 hover:shadow-md" do %>
+        <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+        </svg>
+        Back to Dashboard
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <!-- Total Activity Today -->
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="flex items-center">
+      <div class="flex-shrink-0">
+        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+        </div>
+      </div>
+      <div class="ml-4">
+        <p class="text-sm font-medium text-gray-600">Total Activity</p>
+        <p class="text-2xl font-bold text-gray-900" data-activity-logs-target="totalCount">
+          <%= @stats[:total_today] %>
+        </p>
+        <p class="text-xs text-gray-500">Today</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Errors Today -->
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="flex items-center">
+      <div class="flex-shrink-0">
+        <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+      </div>
+      <div class="ml-4">
+        <p class="text-sm font-medium text-gray-600">Errors</p>
+        <p class="text-2xl font-bold text-gray-900" data-activity-logs-target="errorCount">
+          <%= @stats[:errors_today] %>
+        </p>
+        <p class="text-xs text-gray-500">Today</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Signals Today -->
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="flex items-center">
+      <div class="flex-shrink-0">
+        <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+          </svg>
+        </div>
+      </div>
+      <div class="ml-4">
+        <p class="text-sm font-medium text-gray-600">Signals</p>
+        <p class="text-2xl font-bold text-gray-900" data-activity-logs-target="signalCount">
+          <%= @stats[:signals_today] %>
+        </p>
+        <p class="text-xs text-gray-500">Today</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Orders Today -->
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="flex items-center">
+      <div class="flex-shrink-0">
+        <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+        </div>
+      </div>
+      <div class="ml-4">
+        <p class="text-sm font-medium text-gray-600">Orders</p>
+        <p class="text-2xl font-bold text-gray-900" data-activity-logs-target="orderCount">
+          <%= @stats[:orders_today] %>
+        </p>
+        <p class="text-xs text-gray-500">Today</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+  <h3 class="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
+  
+  <%= form_with url: activity_path, method: :get, class: "grid grid-cols-1 md:grid-cols-4 gap-4", local: true, data: { "activity-logs-target": "filterForm", "action": "change->activity-logs#filterChanged" } do |form| %>
+    <%= form.hidden_field :page, value: 1 %>
+    <!-- Event Type Filter -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">Event Type</label>
+      <%= form.select :type, 
+          options_for_select([['All Types', '']] + @event_types.map { |type| [type.humanize, type] }, @selected_type),
+          {},
+          { class: "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" } %>
+    </div>
+
+    <!-- Level Filter -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">Level</label>
+      <%= form.select :level, 
+          options_for_select([['All Levels', '']] + @levels.map { |level| [level.humanize, level] }, @selected_level),
+          {},
+          { class: "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" } %>
+    </div>
+
+    <!-- Timeframe Filter -->
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">Timeframe</label>
+      <%= form.select :timeframe, 
+          options_for_select([
+            ['Last Hour', 'hour'],
+            ['Today', 'today'],
+            ['This Week', 'week'],
+            ['All Time', 'all']
+          ], @selected_timeframe),
+          {},
+          { class: "block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" } %>
+    </div>
+
+    <!-- Apply Button -->
+    <div class="flex items-end">
+      <%= form.submit "Apply Filters", class: "w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors" %>
+    </div>
+  <% end %>
+</div>
+
+<!-- Activity Log List -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-200">
+  <div class="border-b border-gray-200 px-4 sm:px-6 py-4">
+    <div class="flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-gray-900">
+        Recent Activity
+        <span class="text-sm font-normal text-gray-500" data-activity-logs-target="activityCount">
+          <% if @activities.respond_to?(:current_page) %>
+            (Page <%= @activities.current_page %> of <%= @activities.total_pages %> - <%= @activities.total_count %> total events)
+          <% else %>
+            (<%= @activities.count %> events)
+          <% end %>
+        </span>
+      </h2>
+      <div class="flex items-center space-x-2">
+        <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" data-activity-logs-target="statusIndicator">
+          <div class="w-2 h-2 bg-green-400 rounded-full mr-1.5"></div>
+          Live
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overflow-x-auto">
+    <!-- Add debug information -->
+    <div class="hidden" data-debug-info="activity-list-container">
+      Activity List Container - Controller: activity-logs, Target: activityList
+    </div>
+    
+    <div data-activity-logs-target="activityList" id="activity-list-main">
+      <% if @activities.any? %>
+        <div class="min-w-full" data-activity-container="main">
+          <% @activities.each do |activity| %>
+            <div class="flex items-start px-4 sm:px-6 py-4 border-b border-gray-100 hover:bg-gray-50 transition-colors" data-activity-id="<%= activity.id %>">
+              <!-- Timestamp -->
+              <div class="flex-shrink-0 w-32 sm:w-40">
+                <div class="text-xs text-gray-500">
+                  <%= activity.formatted_occurred_at %>
+                </div>
+                <div class="text-xs text-gray-400">
+                  <%= activity.time_ago %>
+                </div>
+              </div>
+              
+              <!-- Badges -->
+              <div class="flex-shrink-0 flex flex-col space-y-1 mx-4">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= activity.level_badge_class %>">
+                  <%= activity.level.upcase %>
+                </span>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= activity.type_badge_class %>">
+                  <%= activity.event_type.humanize %>
+                </span>
+              </div>
+              
+              <!-- Content -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <p class="text-sm text-gray-900"><%= activity.message %></p>
+                    <% if activity.symbol.present? %>
+                      <p class="mt-1 text-xs text-gray-500">
+                        Symbol: <span class="font-medium"><%= activity.symbol %></span>
+                      </p>
+                    <% end %>
+                    <% if activity.user.present? %>
+                      <p class="mt-1 text-xs text-gray-500">
+                        User: <span class="font-medium"><%= activity.user.email %></span>
+                      </p>
+                    <% end %>
+                  </div>
+                  
+                  <% if activity.details.present? && activity.details.any? %>
+                    <button class="ml-4 text-xs text-blue-600 hover:text-blue-800" onclick="toggleDetails('<%= activity.id %>')">
+                      Details
+                    </button>
+                  <% end %>
+                </div>
+                
+                <!-- Details (initially hidden) -->
+                <% if activity.details.present? && activity.details.any? %>
+                  <div id="details-<%= activity.id %>" class="hidden mt-2 p-3 bg-gray-50 rounded text-xs">
+                    <pre class="text-gray-700 whitespace-pre-wrap"><%= JSON.pretty_generate(activity.details) %></pre>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="text-center py-12" data-empty-state="true">
+          <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+            <path d="M34 40h10v-4a6 6 0 00-10.712-3.714M34 40H14m20 0v-4a9.971 9.971 0 00-.712-3.714M14 40H4v-4a6 6 0 0110.713-3.714M14 40v-4c0-1.313.253-2.566.713-3.714m0 0A10.003 10.003 0 0124 26c4.21 0 7.813 2.602 9.288 6.286M30 14a6 6 0 11-12 0 6 6 0 0112 0zm12 6a4 4 0 11-8 0 4 4 0 018 0zm-28 0a4 4 0 11-8 0 4 4 0 018 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <h3 class="mt-2 text-sm font-medium text-gray-900">No activity logs</h3>
+          <p class="mt-1 text-sm text-gray-500">No events match your current filters.</p>
+          <div class="mt-6">
+            <%= link_to activity_path, class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" do %>
+              Clear Filters
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+  
+  <!-- Pagination -->
+  <% if @activities.respond_to?(:current_page) && @activities.total_pages > 1 %>
+    <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+      <div class="flex-1 flex justify-between sm:hidden">
+        <!-- Mobile pagination -->
+        <% if @activities.prev_page %>
+          <%= link_to "Previous", activity_path(page: @activities.prev_page, type: @selected_type, level: @selected_level, timeframe: @selected_timeframe), 
+              class: "relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+        <% end %>
+        <% if @activities.next_page %>
+          <%= link_to "Next", activity_path(page: @activities.next_page, type: @selected_type, level: @selected_level, timeframe: @selected_timeframe), 
+              class: "ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+        <% end %>
+      </div>
+      
+      <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+        <div>
+          <p class="text-sm text-gray-700">
+            Showing
+            <span class="font-medium"><%= (@activities.current_page - 1) * @activities.limit_value + 1 %></span>
+            to
+            <span class="font-medium"><%= [@activities.current_page * @activities.limit_value, @activities.total_count].min %></span>
+            of
+            <span class="font-medium"><%= @activities.total_count %></span>
+            results
+          </p>
+        </div>
+        
+        <div>
+          <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+            <!-- Previous Page Link -->
+            <% if @activities.prev_page %>
+              <%= link_to activity_path(page: @activities.prev_page, type: @selected_type, level: @selected_level, timeframe: @selected_timeframe), 
+                  class: "relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" do %>
+                <span class="sr-only">Previous</span>
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+              <% end %>
+            <% else %>
+              <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-300 cursor-not-allowed">
+                <span class="sr-only">Previous</span>
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+              </span>
+            <% end %>
+            
+            <!-- Page Numbers -->
+            <% 
+              start_page = [@activities.current_page - 2, 1].max
+              end_page = [start_page + 4, @activities.total_pages].min
+              start_page = [end_page - 4, 1].max
+            %>
+            
+            <% (start_page..end_page).each do |page| %>
+              <% if page == @activities.current_page %>
+                <span class="relative inline-flex items-center px-4 py-2 border border-blue-500 bg-blue-50 text-sm font-medium text-blue-600">
+                  <%= page %>
+                </span>
+              <% else %>
+                <%= link_to page, activity_path(page: page, type: @selected_type, level: @selected_level, timeframe: @selected_timeframe), 
+                    class: "relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50" %>
+              <% end %>
+            <% end %>
+            
+            <!-- Next Page Link -->
+            <% if @activities.next_page %>
+              <%= link_to activity_path(page: @activities.next_page, type: @selected_type, level: @selected_level, timeframe: @selected_timeframe), 
+                  class: "relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" do %>
+                <span class="sr-only">Next</span>
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                </svg>
+              <% end %>
+            <% else %>
+              <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-300 cursor-not-allowed">
+                <span class="sr-only">Next</span>
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                </svg>
+              </span>
+            <% end %>
+          </nav>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<script>
+  function toggleDetails(activityId) {
+    const details = document.getElementById(`details-${activityId}`);
+    if (details.classList.contains('hidden')) {
+      details.classList.remove('hidden');
+    } else {
+      details.classList.add('hidden');
+    }
+  }
+</script> 

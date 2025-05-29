@@ -4,14 +4,17 @@ class DashboardController < ApplicationController
   before_action :authenticate_user!
   
   def index
-    # Get the default symbol from the user's bot settings or use URL param if provided
+    # Check market hours and show warning if needed
+    check_and_warn_market_hours
+    
+    # Get the default symbol from the user's tracked symbols or use URL param if provided
     user_settings = BotSetting.for_user(current_user)
-    # Use the first symbol from the user's settings, or default to AAPL if no symbols
-    default_symbol = user_settings.symbols_list.first || 'AAPL'
+    # Use the first active tracked symbol, or default to AAPL if no symbols
+    default_symbol = current_user.configured_symbols.first || 'AAPL'
     
     @symbol = params[:symbol] || default_symbol
     @timeframe = params[:timeframe] || user_settings.timeframe || '5m'
-    @available_symbols = user_settings.symbols_list.presence || ['AAPL']
+    @available_symbols = current_user.configured_symbols.presence || ['AAPL']
     @bot_state = BotState.for_symbol(@symbol)
     @all_bot_states = @available_symbols.map { |symbol| BotState.for_symbol(symbol) }
     @positions = Position.open.for_user(current_user).recent_first
@@ -19,8 +22,7 @@ class DashboardController < ApplicationController
   end
   
   def start_bot
-    user_settings = BotSetting.for_user(current_user)
-    symbols_to_start = user_settings.symbols_list.presence || ['AAPL']
+    symbols_to_start = current_user.configured_symbols.presence || ['AAPL']
     
     begin
       started_symbols = []
@@ -47,36 +49,89 @@ class DashboardController < ApplicationController
           job = MarketPingJob.perform_later(symbol)
           Rails.logger.info "DashboardController: Job queued with ID: #{job.job_id} for #{symbol}"
           
+          # Log bot start activity
+          ActivityLog.log_bot_event(
+            'start',
+            user: current_user,
+            message: "Trading bot started for #{symbol}",
+            details: {
+              symbol: symbol,
+              job_id: job.job_id,
+              configured_symbols: symbols_to_start
+            }
+          )
+          
           started_symbols << symbol
         rescue => e
           Rails.logger.error "DashboardController: Failed to start bot for #{symbol}: #{e.message}"
           BotState.log_error!(symbol, e.message)
+          
+          # Broadcast error notification for this specific symbol
+          broadcast_error_notification(
+            "Failed to start trading bot for #{symbol}: #{e.message}",
+            persistent: true
+          )
+          
+          # Log bot start error
+          ActivityLog.log_error(
+            "Failed to start trading bot for #{symbol}: #{e.message}",
+            context: 'dashboard_controller',
+            user: current_user,
+            details: {
+              symbol: symbol,
+              error: e.message,
+              backtrace: e.backtrace&.first(5)
+            }
+          )
+          
           failed_symbols << symbol
         end
       end
       
       if failed_symbols.empty?
+        # Broadcast success notification
+        success_message = "Trading bots started successfully for: #{started_symbols.join(', ')}"
+        broadcast_success_notification(success_message)
+        
         render json: {
           success: true,
-          message: "Bots started successfully for: #{started_symbols.join(', ')}"
+          message: success_message
         }
       else
+        # Broadcast warning if some failed
+        warning_message = "Some bots failed to start: #{failed_symbols.join(', ')}"
+        broadcast_warning_notification(warning_message, persistent: true)
+        
         render json: {
           success: false,
-          error: "Failed to start bots for: #{failed_symbols.join(', ')}"
+          error: warning_message
         }, status: 422
       end
     rescue => e
+      # Broadcast error for general failure
+      error_message = "Failed to start trading bots: #{e.message}"
+      broadcast_error_notification(error_message, persistent: true)
+      
+      # Log general bot start error
+      ActivityLog.log_error(
+        error_message,
+        context: 'dashboard_controller',
+        user: current_user,
+        details: {
+          symbols: symbols_to_start,
+          error: e.message
+        }
+      )
+      
       render json: {
         success: false,
-        error: e.message
+        error: error_message
       }, status: 422
     end
   end
   
   def stop_bot
-    user_settings = BotSetting.for_user(current_user)
-    symbols_to_stop = user_settings.symbols_list.presence || ['AAPL']
+    symbols_to_stop = current_user.configured_symbols.presence || ['AAPL']
     
     begin
       stopped_symbols = []
@@ -85,35 +140,88 @@ class DashboardController < ApplicationController
       symbols_to_stop.each do |symbol|
         begin
           bot_state = BotState.stop!(symbol)
+          
+          # Log bot stop activity
+          ActivityLog.log_bot_event(
+            'stop',
+            user: current_user,
+            message: "Trading bot stopped for #{symbol}",
+            details: {
+              symbol: symbol,
+              uptime: bot_state.last_run_at ? time_since(bot_state.last_run_at) : 'unknown',
+              configured_symbols: symbols_to_stop
+            }
+          )
+          
           stopped_symbols << symbol
         rescue => e
           Rails.logger.error "DashboardController: Failed to stop bot for #{symbol}: #{e.message}"
+          
+          # Broadcast error notification for this specific symbol
+          broadcast_error_notification(
+            "Failed to stop trading bot for #{symbol}: #{e.message}",
+            persistent: true
+          )
+          
+          # Log bot stop error
+          ActivityLog.log_error(
+            "Failed to stop trading bot for #{symbol}: #{e.message}",
+            context: 'dashboard_controller',
+            user: current_user,
+            details: {
+              symbol: symbol,
+              error: e.message
+            }
+          )
+          
           failed_symbols << symbol
         end
       end
       
       if failed_symbols.empty?
+        # Broadcast success notification
+        success_message = "Trading bots stopped successfully for: #{stopped_symbols.join(', ')}"
+        broadcast_success_notification(success_message)
+        
         render json: {
           success: true,
-          message: "Bots stopped successfully for: #{stopped_symbols.join(', ')}"
+          message: success_message
         }
       else
+        # Broadcast warning if some failed
+        warning_message = "Some bots failed to stop: #{failed_symbols.join(', ')}"
+        broadcast_warning_notification(warning_message, persistent: true)
+        
         render json: {
           success: false,
-          error: "Failed to stop bots for: #{failed_symbols.join(', ')}"
+          error: warning_message
         }, status: 422
       end
     rescue => e
+      # Broadcast error for general failure
+      error_message = "Failed to stop trading bots: #{e.message}"
+      broadcast_error_notification(error_message, persistent: true)
+      
+      # Log general bot stop error
+      ActivityLog.log_error(
+        error_message,
+        context: 'dashboard_controller',
+        user: current_user,
+        details: {
+          symbols: symbols_to_stop,
+          error: e.message
+        }
+      )
+      
       render json: {
         success: false,
-        error: e.message
+        error: error_message
       }, status: 422
     end
   end
   
   def bot_status
-    user_settings = BotSetting.for_user(current_user)
-    default_symbol = user_settings.symbols_list.first || 'AAPL'
+    default_symbol = current_user.configured_symbols.first || 'AAPL'
     symbol = params[:symbol] || default_symbol
     
     bot_state = BotState.for_symbol(symbol)
@@ -132,13 +240,16 @@ class DashboardController < ApplicationController
     timeframe = params[:timeframe] || '5m'
     
     # Check if user has access to this symbol
-    user_settings = BotSetting.for_user(current_user)
-    unless user_settings.symbols_list.include?(symbol)
+    unless current_user.configured_symbols.include?(symbol)
+      broadcast_error_notification("Symbol #{symbol} not configured for your account")
       render json: { error: 'Symbol not configured for this user' }, status: 403
       return
     end
     
     begin
+      # Check market hours and show warning if needed
+      check_and_warn_market_hours
+      
       # Get current market data using the same service as MarketPingJob
       price_data = MarketDataService.get_current_price(symbol)
       ohlc_data = MarketDataService.get_ohlc_data(symbol)
@@ -169,6 +280,10 @@ class DashboardController < ApplicationController
       }
     rescue => e
       Rails.logger.error "DashboardController#market_data: Error fetching data for #{symbol}: #{e.message}"
+      
+      # Broadcast data unavailable warning
+      broadcast_data_unavailable_warning(symbol: symbol)
+      
       render json: { 
         success: false, 
         error: 'Failed to fetch market data',
@@ -317,5 +432,17 @@ class DashboardController < ApplicationController
     end
     
     candles.reverse
+  end
+  
+  def time_since(time)
+    distance = Time.current - time
+    case distance
+    when 0..59
+      "#{distance.to_i} seconds"
+    when 60..3599
+      "#{(distance / 60).to_i} minutes"
+    else
+      "#{(distance / 3600).to_i} hours"
+    end
   end
 end 

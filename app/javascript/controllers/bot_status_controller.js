@@ -19,7 +19,7 @@ export default class extends Controller {
     buttonText.textContent = "Starting..."
     
     try {
-      const response = await fetch('/dashboard/bot/start', {
+      const response = await fetch('/dashboard/start_bot', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -65,7 +65,7 @@ export default class extends Controller {
     buttonText.textContent = "Stopping..."
     
     try {
-      const response = await fetch('/dashboard/bot/stop', {
+      const response = await fetch('/dashboard/stop_bot', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -122,19 +122,24 @@ export default class extends Controller {
   }
 
   showNotification(message, type = 'info') {
-    // Create a simple notification
-    const notification = document.createElement('div')
-    notification.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white ${
-      type === 'success' ? 'bg-green-500' : 
-      type === 'error' ? 'bg-red-500' : 'bg-blue-500'
-    }`
-    notification.textContent = message
-    
-    document.body.appendChild(notification)
-    
-    // Remove notification after 3 seconds
-    setTimeout(() => {
-      notification.remove()
-    }, 3000)
+    // Use the global Toast system if available, otherwise fall back to simple notification
+    if (window.Toast) {
+      window.Toast.show(message, type)
+    } else {
+      // Create a simple notification fallback
+      const notification = document.createElement('div')
+      notification.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white ${
+        type === 'success' ? 'bg-green-500' : 
+        type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+      }`
+      notification.textContent = message
+      
+      document.body.appendChild(notification)
+      
+      // Remove notification after 3 seconds
+      setTimeout(() => {
+        notification.remove()
+      }, 3000)
+    }
   }
 } 

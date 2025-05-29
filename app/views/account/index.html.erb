@@ -1,0 +1,349 @@
+<!-- Account Overview Header -->
+<div class="mb-6 sm:mb-8" data-controller="account">
+  <div class="md:flex md:items-center md:justify-between">
+    <div class="flex-1 min-w-0">
+      <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Account Overview</h1>
+      <p class="mt-1 text-sm text-gray-500">
+        <% if @account_info %>
+          Alpaca Paper Trading Account • Last updated: <span data-account-target="lastUpdated"><%= Time.current.strftime("%I:%M:%S %p") %></span>
+        <% else %>
+          Account information unavailable
+        <% end %>
+      </p>
+    </div>
+    <div class="mt-4 flex space-x-3 md:mt-0 md:ml-4">
+      <button 
+        data-action="click->account#refreshAccount"
+        data-account-target="refreshButton"
+        class="inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 hover:shadow-md">
+        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        <span data-account-target="refreshText">Refresh</span>
+      </button>
+      <%= link_to dashboard_path, class: "inline-flex items-center px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 hover:shadow-md" do %>
+        <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+        </svg>
+        Back to Dashboard
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<% if @account_info %>
+  <!-- Account Balance Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <!-- Portfolio Value -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+            </svg>
+          </div>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-gray-600">Portfolio Value</p>
+          <p class="text-2xl font-bold text-gray-900" data-account-target="portfolioValue">
+            $<%= number_with_precision(@account_info[:portfolio_value], precision: 2, delimiter: ',') %>
+          </p>
+          <% if @performance_metrics[:daily_pl] %>
+            <p class="text-xs <%= @performance_metrics[:daily_pl] >= 0 ? 'text-green-600' : 'text-red-600' %>">
+              <%= @performance_metrics[:daily_pl] >= 0 ? '+' : '' %>$<%= number_with_precision(@performance_metrics[:daily_pl], precision: 2) %>
+              (<%= @performance_metrics[:daily_pl_percent] >= 0 ? '+' : '' %><%= @performance_metrics[:daily_pl_percent] %>%) today
+            </p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Buying Power -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+            </svg>
+          </div>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-gray-600">Buying Power</p>
+          <p class="text-2xl font-bold text-gray-900" data-account-target="buyingPower">
+            $<%= number_with_precision(@account_info[:buying_power], precision: 2, delimiter: ',') %>
+          </p>
+          <p class="text-xs text-gray-500">
+            <%= @account_info[:multiplier] %>x leverage
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cash Balance -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <div class="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+            </svg>
+          </div>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-gray-600">Cash</p>
+          <p class="text-2xl font-bold text-gray-900" data-account-target="cash">
+            $<%= number_with_precision(@account_info[:cash], precision: 2, delimiter: ',') %>
+          </p>
+          <% if @performance_metrics[:cash_percent] %>
+            <p class="text-xs text-gray-500">
+              <%= @performance_metrics[:cash_percent].round(1) %>% of portfolio
+            </p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Equity -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+          </div>
+        </div>
+        <div class="ml-4">
+          <p class="text-sm font-medium text-gray-600">Equity</p>
+          <p class="text-2xl font-bold text-gray-900" data-account-target="equity">
+            $<%= number_with_precision(@account_info[:equity], precision: 2, delimiter: ',') %>
+          </p>
+          <% if @performance_metrics[:total_return_percent] %>
+            <p class="text-xs <%= @performance_metrics[:total_return_percent] >= 0 ? 'text-green-600' : 'text-red-600' %>">
+              <%= @performance_metrics[:total_return_percent] >= 0 ? '+' : '' %><%= @performance_metrics[:total_return_percent] %>% total return
+            </p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account Status and Day Trading Info -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- Account Status -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Account Status</h3>
+      <div class="space-y-3">
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-600">Account Number</span>
+          <span class="text-sm font-medium text-gray-900"><%= @account_info[:account_number] %></span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-600">Status</span>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= @account_info[:status] == 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+            <%= @account_info[:status] %>
+          </span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-600">Trading Blocked</span>
+          <span class="text-sm font-medium <%= @account_info[:trading_blocked] ? 'text-red-600' : 'text-green-600' %>">
+            <%= @account_info[:trading_blocked] ? 'Yes' : 'No' %>
+          </span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-600">Pattern Day Trader</span>
+          <span class="text-sm font-medium <%= @account_info[:pattern_day_trader] ? 'text-yellow-600' : 'text-gray-900' %>">
+            <%= @account_info[:pattern_day_trader] ? 'Yes' : 'No' %>
+          </span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-600">Data Source</span>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= @account_info[:source] == 'alpaca' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800' %>">
+            <%= @account_info[:source] == 'alpaca' ? 'Alpaca API' : 'Simulated' %>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Day Trading Info -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Day Trading</h3>
+      <div class="space-y-3">
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-600">Day Trades Used</span>
+          <span class="text-sm font-medium text-gray-900"><%= @account_info[:daytrade_count] %> / 4</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-600">Day Trades Remaining</span>
+          <span class="text-sm font-medium <%= @day_trades_remaining > 0 ? 'text-green-600' : 'text-red-600' %>">
+            <%= @day_trades_remaining %>
+          </span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-600">Day Trading Buying Power</span>
+          <span class="text-sm font-medium text-gray-900">
+            $<%= number_with_precision(@account_info[:daytrading_buying_power], precision: 2, delimiter: ',') %>
+          </span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-600">Overnight Buying Power</span>
+          <span class="text-sm font-medium text-gray-900">
+            $<%= number_with_precision(@account_info[:regt_buying_power], precision: 2, delimiter: ',') %>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Current Positions -->
+  <% if @alpaca_positions && @alpaca_positions.any? %>
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+      <div class="border-b border-gray-200 px-4 sm:px-6 py-4">
+        <h2 class="text-lg font-semibold text-gray-900">
+          Current Positions 
+          <span class="text-sm font-normal text-gray-500">(<%= @alpaca_positions.length %> positions)</span>
+        </h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Symbol</th>
+              <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+              <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Price</th>
+              <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Price</th>
+              <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Market Value</th>
+              <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unrealized P/L</th>
+              <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P/L %</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <% @alpaca_positions.each do |position| %>
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0 h-8 w-8">
+                      <div class="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <span class="text-xs font-bold text-blue-600"><%= position[:symbol] %></span>
+                      </div>
+                    </div>
+                    <div class="ml-3">
+                      <div class="text-sm font-medium text-gray-900"><%= position[:symbol] %></div>
+                      <div class="text-xs text-gray-500"><%= position[:side].upcase %></div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                  <%= number_with_precision(position[:qty], precision: 0) %>
+                </td>
+                <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                  $<%= number_with_precision(position[:avg_entry_price], precision: 2) %>
+                </td>
+                <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                  $<%= number_with_precision(position[:current_price], precision: 2) %>
+                </td>
+                <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                  $<%= number_with_precision(position[:market_value], precision: 2) %>
+                </td>
+                <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-mono <%= position[:unrealized_pl] >= 0 ? 'text-green-600' : 'text-red-600' %>">
+                  <%= position[:unrealized_pl] >= 0 ? '+' : '' %>$<%= number_with_precision(position[:unrealized_pl], precision: 2) %>
+                </td>
+                <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-mono <%= position[:unrealized_plpc] >= 0 ? 'text-green-600' : 'text-red-600' %>">
+                  <%= position[:unrealized_plpc] >= 0 ? '+' : '' %><%= number_with_precision(position[:unrealized_plpc] * 100, precision: 2) %>%
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% else %>
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+      <div class="border-b border-gray-200 px-4 sm:px-6 py-4">
+        <h2 class="text-lg font-semibold text-gray-900">Current Positions</h2>
+      </div>
+      <div class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+          <path d="M34 40h10v-4a6 6 0 00-10.712-3.714M34 40H14m20 0v-4a9.971 9.971 0 00-.712-3.714M14 40H4v-4a6 6 0 0110.713-3.714M14 40v-4c0-1.313.253-2.566.713-3.714m0 0A10.003 10.003 0 0124 26c4.21 0 7.813 2.602 9.288 6.286M30 14a6 6 0 11-12 0 6 6 0 0112 0zm12 6a4 4 0 11-8 0 4 4 0 018 0zm-28 0a4 4 0 11-8 0 4 4 0 018 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No positions</h3>
+        <p class="mt-1 text-sm text-gray-500">You don't have any open positions in your Alpaca account.</p>
+        <div class="mt-6">
+          <%= link_to dashboard_path, class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" do %>
+            Go to Dashboard
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Recent Activities -->
+  <% if @recent_activities && @recent_activities.any? %>
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div class="border-b border-gray-200 px-4 sm:px-6 py-4">
+        <h2 class="text-lg font-semibold text-gray-900">Recent Activities</h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+              <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+              <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Symbol</th>
+              <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+              <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+              <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <% @recent_activities.each do |activity| %>
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <%= Date.parse(activity[:date]).strftime("%m/%d/%Y") rescue activity[:date] %>
+                </td>
+                <td class="px-4 sm:px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= activity[:activity_type] == 'FILL' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' %>">
+                    <%= activity[:activity_type] %>
+                  </span>
+                </td>
+                <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <%= activity[:symbol] || '--' %>
+                </td>
+                <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                  <%= activity[:qty] ? number_with_precision(activity[:qty], precision: 0) : '--' %>
+                </td>
+                <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">
+                  <%= activity[:price] ? "$#{number_with_precision(activity[:price], precision: 2)}" : '--' %>
+                </td>
+                <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-mono <%= activity[:net_amount] >= 0 ? 'text-green-600' : 'text-red-600' %>">
+                  <%= activity[:net_amount] >= 0 ? '+' : '' %>$<%= number_with_precision(activity[:net_amount], precision: 2) %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+
+<% else %>
+  <!-- Error State -->
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+    <div class="text-center py-12">
+      <svg class="mx-auto h-12 w-12 text-red-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+        <path d="M34 40h10v-4a6 6 0 00-10.712-3.714M34 40H14m20 0v-4a9.971 9.971 0 00-.712-3.714M14 40H4v-4a6 6 0 0110.713-3.714M14 40v-4c0-1.313.253-2.566.713-3.714m0 0A10.003 10.003 0 0124 26c4.21 0 7.813 2.602 9.288 6.286M30 14a6 6 0 11-12 0 6 6 0 0112 0zm12 6a4 4 0 11-8 0 4 4 0 018 0zm-28 0a4 4 0 11-8 0 4 4 0 018 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      <h3 class="mt-2 text-sm font-medium text-gray-900">Account data unavailable</h3>
+      <p class="mt-1 text-sm text-gray-500">Unable to load account information from Alpaca. Please check your API credentials and try again.</p>
+      <div class="mt-6">
+        <button 
+          data-action="click->account#refreshAccount"
+          class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          Try Again
+        </button>
+      </div>
+    </div>
+  </div>
+<% end %> 

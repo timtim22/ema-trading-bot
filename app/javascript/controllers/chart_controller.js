@@ -705,12 +705,11 @@ export default class extends Controller {
   async fetchDataForTimeframe(timeframe) {
     try {
       console.log(`🔄 Fetching ${timeframe} data for ${this.symbolValue}...`)
-      console.log(`🔄 Expected data points: ${this.getDataPointsForTimeframe()}, interval: ${this.getIntervalMinutes()}min`)
       
       // Show loading state
       this.showLoadingState()
       
-      const response = await fetch(`/dashboard/market_data/${this.symbolValue}?timeframe=${timeframe}`, {
+      const response = await fetch(`/dashboard/market_data?symbol=${this.symbolValue}&timeframe=${timeframe}`, {
         headers: {
           'Accept': 'application/json',
           'X-Requested-With': 'XMLHttpRequest'
@@ -927,7 +926,7 @@ export default class extends Controller {
           } else {
             // Fallback to simple EMA data
             const simpleEma5 = this.createSimpleEMAData(50, 105)
-            this.ema5Series.setData(simpleEma5)
+          this.ema5Series.setData(simpleEma5)
             console.log(`✅ Successfully set ${simpleEma5.length} fallback EMA5 points`)
           }
         } catch (emaError) {
@@ -945,7 +944,7 @@ export default class extends Controller {
           } else {
             // Fallback to simple EMA data
             const simpleEma8 = this.createSimpleEMAData(50, 110)
-            this.ema8Series.setData(simpleEma8)
+          this.ema8Series.setData(simpleEma8)
             console.log(`✅ Successfully set ${simpleEma8.length} fallback EMA8 points`)
           }
         } catch (emaError) {
@@ -963,7 +962,7 @@ export default class extends Controller {
           } else {
             // Fallback to simple EMA data
             const simpleEma22 = this.createSimpleEMAData(50, 115)
-            this.ema22Series.setData(simpleEma22)
+          this.ema22Series.setData(simpleEma22)
             console.log(`✅ Successfully set ${simpleEma22.length} fallback EMA22 points`)
           }
         } catch (emaError) {
@@ -1481,21 +1480,32 @@ export default class extends Controller {
     // Prevent notification spam
     const now = Date.now()
     this.lastNotification = this.lastNotification || 0
-    if (now - this.lastNotification < 2000) return // Max 1 notification per 2 seconds
+    if (now - this.lastNotification < 1000) return // Reduced to 1 second
     this.lastNotification = now
+    
+    // Create or get notification container
+    let container = document.getElementById('notification-container')
+    if (!container) {
+      container = document.createElement('div')
+      container.id = 'notification-container'
+      container.className = 'fixed top-4 right-4 z-50 space-y-2 pointer-events-none'
+      container.style.maxWidth = '384px' // max-w-sm equivalent
+      document.body.appendChild(container)
+    }
     
     // Create notification element
     const notification = document.createElement('div')
-    notification.className = `fixed top-4 right-4 z-50 max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-300 ease-in-out translate-x-full`
+    notification.className = `bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-300 ease-in-out translate-x-full opacity-0`
     
     const iconColor = type === 'success' ? 'text-green-400' : type === 'error' ? 'text-red-400' : 'text-blue-400'
     const textColor = type === 'success' ? 'text-green-800' : type === 'error' ? 'text-red-800' : 'text-blue-800'
+    const bgColor = type === 'success' ? 'bg-green-50' : type === 'error' ? 'bg-red-50' : 'bg-blue-50'
     
     notification.innerHTML = `
-      <div class="p-4">
+      <div class="p-4 ${bgColor}">
         <div class="flex items-start">
           <div class="flex-shrink-0">
-            <svg class="h-6 w-6 ${iconColor}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg class="h-5 w-5 ${iconColor}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               ${type === 'success' ? 
                 '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />' :
                 type === 'error' ?
@@ -1504,11 +1514,12 @@ export default class extends Controller {
               }
             </svg>
           </div>
-          <div class="ml-3 w-0 flex-1 pt-0.5">
+          <div class="ml-3 flex-1">
             <p class="text-sm font-medium ${textColor}">${message}</p>
           </div>
-          <div class="ml-4 flex-shrink-0 flex">
-            <button class="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none" onclick="this.parentElement.parentElement.parentElement.parentElement.remove()">
+          <div class="ml-4 flex-shrink-0">
+            <button class="inline-flex rounded-md ${bgColor} text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-green-50 focus:ring-green-600" onclick="this.closest('.notification-item').remove()">
+              <span class="sr-only">Close</span>
               <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
               </svg>
@@ -1518,24 +1529,34 @@ export default class extends Controller {
       </div>
     `
     
-    document.body.appendChild(notification)
+    // Add a class for easier removal
+    notification.classList.add('notification-item')
+    
+    // Add to container
+    container.appendChild(notification)
     
     // Animate in
     setTimeout(() => {
-      notification.classList.remove('translate-x-full')
+      notification.classList.remove('translate-x-full', 'opacity-0')
+      notification.classList.add('translate-x-0', 'opacity-100')
     }, 100)
     
-    // Auto remove after 5 seconds
+    // Auto remove after 4 seconds
     setTimeout(() => {
       if (notification.parentNode) {
-        notification.classList.add('translate-x-full')
+        notification.classList.add('translate-x-full', 'opacity-0')
         setTimeout(() => {
           if (notification.parentNode) {
-            notification.parentNode.removeChild(notification)
+            notification.remove()
+            
+            // Clean up container if empty
+            if (container.children.length === 0) {
+              container.remove()
+            }
           }
         }, 300)
       }
-    }, 5000)
+    }, 4000)
   }
 
   // Handle symbol changes
@@ -1571,7 +1592,7 @@ export default class extends Controller {
       // Show loading state
       this.showLoadingState()
       
-      const response = await fetch(`/dashboard/market_data/${this.symbolValue}?timeframe=${this.timeframeValue}`, {
+      const response = await fetch(`/dashboard/market_data?symbol=${this.symbolValue}&timeframe=${this.timeframeValue}`, {
         headers: {
           'Accept': 'application/json',
           'X-Requested-With': 'XMLHttpRequest'
@@ -1599,8 +1620,8 @@ export default class extends Controller {
       console.error(`❌ Error fetching immediate data for ${this.symbolValue}:`, error)
       
       // Always fall back to sample data for the current symbol when fetch fails
-      console.log(`🔄 Falling back to sample data for ${this.symbolValue}`)
-      this.initializeWithSampleData()
+        console.log(`🔄 Falling back to sample data for ${this.symbolValue}`)
+        this.initializeWithSampleData()
       
       this.hideLoadingState()
     }

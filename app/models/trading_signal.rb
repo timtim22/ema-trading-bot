@@ -52,7 +52,14 @@ class TradingSignal < ApplicationRecord
   def self.detect_crossover_signal(symbol, current_emas, previous_emas, current_price, user)
     return nil unless current_emas && previous_emas
     
-    # 3-bar EMA crossover detection logic
+    # Get user-specific settings
+    user_settings = BotSetting.for_user(user)
+    confirmation_bars = user_settings.confirmation_bars || 3
+    
+    # For now, we use simple crossover detection since we only have current and previous EMAs
+    # In a full implementation, we would need historical EMA data for confirmation_bars
+    # This is a simplified version that detects immediate crossovers
+    
     # Buy signal: EMA5 > EMA8 > EMA22 (bullish alignment)
     # Sell signal: EMA5 < EMA8 < EMA22 (bearish alignment)
     
@@ -67,9 +74,11 @@ class TradingSignal < ApplicationRecord
     # Detect crossover from bearish to bullish (buy signal)
     if current_bullish && !previous_bullish
       signal_type = 'buy'
+      Rails.logger.info "TradingSignal: Buy signal detected for #{symbol} (user #{user.id}, confirmation_bars=#{confirmation_bars})"
     # Detect crossover from bullish to bearish (sell signal)  
     elsif current_bearish && !previous_bearish
       signal_type = 'sell'
+      Rails.logger.info "TradingSignal: Sell signal detected for #{symbol} (user #{user.id}, confirmation_bars=#{confirmation_bars})"
     end
     
     if signal_type

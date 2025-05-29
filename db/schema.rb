@@ -10,10 +10,29 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_28_093523) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_29_080201) do
+  create_table "activity_logs", force: :cascade do |t|
+    t.string "event_type", null: false
+    t.string "level", null: false
+    t.text "message", null: false
+    t.string "symbol"
+    t.integer "user_id"
+    t.json "details", default: {}
+    t.datetime "occurred_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["event_type", "level"], name: "index_activity_logs_on_event_type_and_level"
+    t.index ["event_type", "occurred_at"], name: "index_activity_logs_on_event_type_and_occurred_at"
+    t.index ["event_type"], name: "index_activity_logs_on_event_type"
+    t.index ["level"], name: "index_activity_logs_on_level"
+    t.index ["occurred_at"], name: "index_activity_logs_on_occurred_at"
+    t.index ["symbol"], name: "index_activity_logs_on_symbol"
+    t.index ["user_id", "occurred_at"], name: "index_activity_logs_on_user_id_and_occurred_at"
+    t.index ["user_id"], name: "index_activity_logs_on_user_id"
+  end
+
   create_table "bot_settings", force: :cascade do |t|
     t.integer "user_id", null: false
-    t.text "symbols", default: "[\"AAPL\"]"
     t.string "timeframe", default: "5m"
     t.decimal "profit_percentage", precision: 5, scale: 2, default: "2.0"
     t.decimal "loss_percentage", precision: 5, scale: 2, default: "1.0"
@@ -76,6 +95,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_28_093523) do
     t.index ["user_id"], name: "index_positions_on_user_id"
   end
 
+  create_table "tracked_symbols", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "symbol", limit: 10, null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["symbol"], name: "index_tracked_symbols_on_symbol"
+    t.index ["user_id", "active"], name: "index_tracked_symbols_on_user_id_and_active"
+    t.index ["user_id", "symbol"], name: "index_tracked_symbols_on_user_id_and_symbol", unique: true
+    t.index ["user_id"], name: "index_tracked_symbols_on_user_id"
+  end
+
   create_table "trading_signals", force: :cascade do |t|
     t.string "symbol", limit: 10, null: false
     t.string "signal_type", limit: 20, null: false
@@ -106,7 +137,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_28_093523) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  add_foreign_key "activity_logs", "users"
   add_foreign_key "bot_settings", "users"
   add_foreign_key "positions", "users"
+  add_foreign_key "tracked_symbols", "users"
   add_foreign_key "trading_signals", "users"
 end

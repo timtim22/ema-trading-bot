@@ -60,8 +60,20 @@ class MarketPingJob < ApplicationJob
     # Check again to avoid race conditions
     bot_state.reload
     if bot_state.running?
+      # Check if there's already a scheduled job for this symbol to prevent duplicates
+      require 'sidekiq/api'
+      existing_jobs = Sidekiq::ScheduledSet.new.select do |job|
+        job.klass == 'Sidekiq::ActiveJob::Wrapper' && 
+        job.args.first['job_class'] == 'MarketPingJob' && 
+        job.args.first['arguments'] == [symbol]
+      end
+      
+      if existing_jobs.empty?
       Rails.logger.info "MarketPingJob: Scheduling next job for #{symbol} in 10 seconds"
       MarketPingJob.set(wait: 10.seconds).perform_later(symbol)
+      else
+        Rails.logger.info "MarketPingJob: Job already scheduled for #{symbol}, skipping duplicate"
+      end
     else
       Rails.logger.info "MarketPingJob: Bot stopped for #{symbol}, not rescheduling"
     end
@@ -76,6 +88,19 @@ class MarketPingJob < ApplicationJob
       price_data = MarketDataService.get_current_price(symbol)
       current_price = price_data[:price]
       source = price_data[:source]
+      
+      # Log successful market data fetch
+      ActivityLog.log_fetch(
+        symbol,
+        success: true,
+        message: "Market data fetched successfully for #{symbol}",
+        user: nil, # System-level fetch
+        details: {
+          price: current_price,
+          source: source,
+          timestamp: Time.current.iso8601
+        }
+      )
       
       # Get OHLC data from Alpaca
       ohlc_data = MarketDataService.get_ohlc_data(symbol)
@@ -104,6 +129,21 @@ class MarketPingJob < ApplicationJob
       }
     rescue => e
       Rails.logger.error "MarketPingJob: Error generating Alpaca market data for #{symbol}: #{e.message}"
+      
+      # Log failed market data fetch
+      ActivityLog.log_fetch(
+        symbol,
+        success: false,
+        message: "Failed to fetch market data for #{symbol}: #{e.message}",
+        user: nil,
+        details: {
+          error: e.message,
+          source: 'alpaca',
+          timestamp: Time.current.iso8601,
+          fallback_used: true
+        }
+      )
+      
       # Fallback to simulated data
       generate_simulated_market_data(symbol)
     end
@@ -208,7 +248,8 @@ class MarketPingJob < ApplicationJob
       "GOOG" => 171.2,
       "AMZN" => 178.3,
       "TSLA" => 248.5,
-      "NVDA" => 875.2
+      "NVDA" => 875.2,
+      "META" => 99.5
     }
     
     base_prices[symbol] || 100.0
@@ -266,9 +307,20 @@ class MarketPingJob < ApplicationJob
       if positions.any?
         Rails.logger.info "MarketPingJob: Updating #{positions.count} positions for #{symbol} with price $#{current_price}"
         
+        # Update current prices
         positions.update_all(current_price: current_price)
         
-        Rails.logger.debug "MarketPingJob: Updated position prices for #{symbol}"
+        # Check for user-specific exit conditions
+        positions.includes(:user).each do |position|
+          user_trading_service = UserTradingService.new(position.user, symbol)
+          closed = user_trading_service.check_and_close_positions(current_price)
+          
+          if closed
+            Rails.logger.info "MarketPingJob: Position closed for user #{position.user.email} on #{symbol}"
+          end
+        end
+        
+        Rails.logger.debug "MarketPingJob: Updated position prices and checked exit conditions for #{symbol}"
       end
     rescue => e
       Rails.logger.error "MarketPingJob: Error updating position prices for #{symbol}: #{e.message}"
@@ -298,6 +350,25 @@ class MarketPingJob < ApplicationJob
         
         if signal
           Rails.logger.info "🚨 MarketPingJob: #{signal.signal_type.upcase} signal detected for #{symbol} at $#{current_price} for user #{user.id}"
+          
+          # Log the trading signal activity
+          ActivityLog.log_signal(
+            symbol,
+            signal.signal_type,
+            current_price,
+            user: user,
+            details: {
+              signal_id: signal.id,
+              ema5: current_emas[:ema5],
+              ema8: current_emas[:ema8],
+              ema22: current_emas[:ema22],
+              previous_ema5: previous_emas[:ema5],
+              previous_ema8: previous_emas[:ema8],
+              previous_ema22: previous_emas[:ema22],
+              confidence: calculate_signal_confidence(current_emas, previous_emas),
+              source: market_data[:source]
+            }
+          )
           
           # Broadcast signal to user-specific channel
           ActionCable.server.broadcast("trading_signals_user_#{user.id}", {
@@ -335,7 +406,37 @@ class MarketPingJob < ApplicationJob
       
     rescue => e
       Rails.logger.error "MarketPingJob: Error detecting signals for #{symbol}: #{e.message}"
+      
+      # Log signal detection error
+      ActivityLog.log_error(
+        "Failed to detect trading signals for #{symbol}: #{e.message}",
+        context: 'market_ping_job',
+        user: nil,
+        details: {
+          symbol: symbol,
+          price: market_data[:price],
+          error: e.message,
+          emas: current_emas,
+          timestamp: Time.current.iso8601
+        }
+      )
     end
+  end
+  
+  # Calculate signal confidence based on EMA separation
+  def calculate_signal_confidence(current_emas, previous_emas)
+    return 0.5 unless current_emas && previous_emas
+    
+    # Calculate the spread between EMAs as a confidence indicator
+    current_spread = (current_emas[:ema5] - current_emas[:ema22]).abs
+    previous_spread = (previous_emas[:ema5] - previous_emas[:ema22]).abs
+    
+    # Higher spread indicates stronger trend and higher confidence
+    spread_ratio = current_spread / ([previous_spread, 0.01].max)
+    
+    # Normalize to 0.5-1.0 range
+    confidence = 0.5 + ([spread_ratio / 2.0, 0.5].min)
+    confidence.round(2)
   end
   
   # Get previous EMA values for comparison

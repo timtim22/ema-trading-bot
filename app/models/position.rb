@@ -72,6 +72,32 @@ class Position < ApplicationRecord
     ((current_price - entry_price) / entry_price * 100).round(2)
   end
   
+  def profit_loss_percentage
+    return 0 unless exit_price.present? && entry_price.present?
+    
+    ((exit_price - entry_price) / entry_price * 100).round(2)
+  end
+  
+  def realized_pnl_color_class
+    return 'text-gray-600' unless profit_loss.present?
+    
+    if profit_loss > 0
+      'text-green-600'
+    elsif profit_loss < 0
+      'text-red-600'
+    else
+      'text-gray-600'
+    end
+  end
+  
+  def formatted_realized_pnl
+    return '0.00%' unless profit_loss_percentage
+    
+    pnl = profit_loss_percentage
+    sign = pnl >= 0 ? '+' : ''
+    "#{sign}#{pnl}%"
+  end
+  
   def pnl_color_class
     pnl = unrealized_pnl_percentage
     if pnl > 0

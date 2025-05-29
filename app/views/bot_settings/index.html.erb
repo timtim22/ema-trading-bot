@@ -51,38 +51,98 @@
       </div>
     </div>
 
-    <%= form_with model: @bot_setting, url: bot_settings_path, method: :patch, local: false, data: { action: "submit->bot-settings#submitForm" }, class: "space-y-6" do |form| %>
-      
-      <!-- Symbols Selection -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
-          Trading Symbols
-          <span class="text-red-500">*</span>
-        </label>
-        <p class="text-xs text-gray-500 mb-3">
-          Select one or more symbols to trade. You can switch between symbols in the dashboard.
-        </p>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <% @available_symbols.each do |symbol| %>
-            <label class="relative flex items-center">
-              <%= check_box_tag "bot_setting[symbols][]", symbol, @bot_setting.symbols_list.include?(symbol), 
-                    class: "sr-only peer", 
-                    data: { action: "change->bot-settings#updateSymbolCount" } %>
-              <div class="w-full px-3 py-2 text-sm font-medium text-center border border-gray-300 rounded-lg cursor-pointer 
-                          peer-checked:bg-blue-50 peer-checked:border-blue-500 peer-checked:text-blue-700
-                          hover:bg-gray-50 transition-all duration-200">
-                <%= symbol %>
+    <!-- Symbol Management Section -->
+    <div class="mb-8" data-controller="symbol-manager" data-symbol-manager-create-url-value="<%= tracked_symbols_path %>">
+      <div class="border-b border-gray-200 pb-4 mb-6">
+        <h3 class="text-lg font-medium text-gray-900">Symbol Management</h3>
+        <p class="mt-1 text-sm text-gray-500">Add, remove, and manage the symbols you want to track for trading</p>
+      </div>
+
+      <!-- Message Area -->
+      <div data-symbol-manager-target="message" class="hidden mb-4"></div>
+
+      <!-- Add Symbol Form -->
+      <div class="bg-gray-50 rounded-lg p-4 mb-6">
+        <h4 class="text-sm font-medium text-gray-900 mb-3">Add New Symbol</h4>
+        <%= form_with model: @new_tracked_symbol, url: tracked_symbols_path, local: false, 
+              data: { symbol_manager_target: "addForm" }, 
+              class: "flex flex-col sm:flex-row gap-3" do |form| %>
+          <div class="flex-1">
+            <%= form.text_field :symbol, 
+                  placeholder: "Enter symbol (e.g., AAPL, MSFT)", 
+                  data: { symbol_manager_target: "symbolInput" },
+                  class: "block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm uppercase",
+                  maxlength: 10 %>
               </div>
-            </label>
+          <button type="submit" 
+                  data-symbol-manager-target="addButton"
+                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+            ➕ Add Symbol
+          </button>
           <% end %>
-        </div>
         <p class="mt-2 text-xs text-gray-500">
-          Selected: <span data-bot-settings-target="symbolCount"><%= @bot_setting.symbols_list.length %></span> symbol(s)
-          <% if @bot_setting.symbols_list.length > 1 %>
-            <span class="text-blue-600">• Dashboard will show a symbol selector</span>
-          <% end %>
+          Available symbols: <%= TrackedSymbol.available_symbols.join(', ') %>
         </p>
       </div>
+
+      <!-- Current Tracked Symbols -->
+      <div>
+        <h4 class="text-sm font-medium text-gray-900 mb-3">
+          Your Tracked Symbols (<%= @tracked_symbols.count %>)
+        </h4>
+        
+        <% if @tracked_symbols.any? %>
+          <div data-symbol-manager-target="symbolsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <% @tracked_symbols.each do |tracked_symbol| %>
+              <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200" data-symbol-id="<%= tracked_symbol.id %>">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center space-x-3">
+                    <div class="flex-shrink-0">
+                      <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <span class="text-sm font-bold text-blue-600"><%= tracked_symbol.symbol %></span>
+                      </div>
+                    </div>
+                    <div>
+                      <h3 class="text-sm font-medium text-gray-900"><%= tracked_symbol.symbol %></h3>
+                      <span class="status-badge inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium <%= tracked_symbol.active? ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' %>">
+                        <%= tracked_symbol.active? ? 'Active' : 'Inactive' %>
+                      </span>
+                    </div>
+                  </div>
+                  <div class="flex items-center space-x-2">
+                    <button 
+                      class="toggle-button px-3 py-1 text-xs font-medium rounded-md transition-colors <%= tracked_symbol.active? ? 'text-orange-700 bg-orange-100 hover:bg-orange-200' : 'text-green-700 bg-green-100 hover:bg-green-200' %>"
+                      data-action="click->symbol-manager#toggleSymbol"
+                      data-symbol-id="<%= tracked_symbol.id %>"
+                      data-symbol="<%= tracked_symbol.symbol %>"
+                      data-active="<%= tracked_symbol.active %>">
+                      <%= tracked_symbol.active? ? '⏸️ Deactivate' : '▶️ Activate' %>
+                    </button>
+                    <button 
+                      class="px-3 py-1 text-xs font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-md transition-colors"
+                      data-action="click->symbol-manager#removeSymbol"
+                      data-symbol-id="<%= tracked_symbol.id %>"
+                      data-symbol="<%= tracked_symbol.symbol %>">
+                      🗑️ Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+              <path d="M34 40h10v-4a6 6 0 00-10.712-3.714M34 40H14m20 0v-4a9.971 9.971 0 00-.712-3.714M14 40H4v-4a6 6 0 0110.713-3.714M14 40v-4c0-1.313.253-2.566.713-3.714m0 0A10.003 10.003 0 0124 26c4.21 0 7.813 2.602 9.288 6.286M30 14a6 6 0 11-12 0 6 6 0 0112 0zm12 6a4 4 0 11-8 0 4 4 0 018 0zm-28 0a4 4 0 11-8 0 4 4 0 018 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No symbols tracked</h3>
+            <p class="mt-1 text-sm text-gray-500">Get started by adding your first symbol above.</p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%= form_with model: @bot_setting, url: bot_settings_path, method: :patch, local: false, data: { action: "submit->bot-settings#submitForm" }, class: "space-y-6" do |form| %>
 
       <!-- Timeframe -->
       <div>
@@ -153,9 +213,13 @@
         <h3 class="text-sm font-medium text-gray-900 mb-3">Current Settings Summary</h3>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
           <div>
-            <span class="text-gray-500">Symbols:</span>
+            <span class="text-gray-500">Active Symbols:</span>
             <span class="ml-1 font-medium text-gray-900" data-bot-settings-target="currentSymbols">
-              <%= @bot_setting.symbols_display %>
+              <% if current_user.configured_symbols.any? %>
+                <%= current_user.configured_symbols.join(', ') %>
+              <% else %>
+                <span class="text-red-600">None selected</span>
+              <% end %>
             </span>
           </div>
           <div>

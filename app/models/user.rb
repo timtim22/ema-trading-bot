@@ -7,6 +7,11 @@ class User < ApplicationRecord
   has_many :positions, dependent: :destroy
   has_many :trading_signals, dependent: :destroy
   has_one :bot_setting, dependent: :destroy
+  has_many :tracked_symbols, dependent: :destroy
+  has_many :activity_logs, dependent: :destroy
+  
+  # Callbacks
+  after_create :create_default_tracked_symbols
   
   def active_positions
     positions.active
@@ -29,6 +34,22 @@ class User < ApplicationRecord
   end
   
   def configured_symbols
-    bot_configuration.symbols_list
+    # Use TrackedSymbol model if available, fallback to bot_setting
+    active_tracked_symbols = tracked_symbols.active.pluck(:symbol)
+    active_tracked_symbols.presence || bot_configuration.symbols_list
+  end
+  
+  def active_tracked_symbols
+    tracked_symbols.active.by_symbol
+  end
+  
+  def all_tracked_symbols
+    tracked_symbols.by_symbol
+  end
+  
+  private
+  
+  def create_default_tracked_symbols
+    TrackedSymbol.create_default_symbols_for_user(self)
   end
 end

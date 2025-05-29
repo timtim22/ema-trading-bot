@@ -25,7 +25,7 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="bg-gray-50 min-h-screen">
+  <body class="bg-gray-50 min-h-screen" data-controller="toast help-modal">
     <!-- Header/Navigation -->
     <%= render 'layouts/navbar' %>
     
@@ -71,5 +71,8 @@
       <%= yield %>
     </div>
     </main>
+
+    <!-- Global Help Modal -->
+    <%= render 'layouts/help_modal' %>
   </body>
 </html>

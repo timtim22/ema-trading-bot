@@ -3,39 +3,13 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = [
     "flashMessage", "flashIcon", "flashText",
-    "symbolCount", "currentSymbols", "currentTimeframe", 
+    "currentSymbols", "currentTimeframe", 
     "currentProfit", "currentLoss",
     "submitButton", "submitText"
   ]
 
   connect() {
     console.log("🔧 Bot Settings controller connected")
-    this.updateSymbolCount()
-  }
-
-  updateSymbolCount() {
-    const checkedBoxes = this.element.querySelectorAll('input[name="bot_setting[symbols][]"]:checked')
-    const count = checkedBoxes.length
-    
-    if (this.hasSymbolCountTarget) {
-      this.symbolCountTarget.textContent = count
-    }
-
-    // Update current symbols display
-    if (this.hasCurrentSymbolsTarget) {
-      const symbols = Array.from(checkedBoxes).map(cb => cb.value)
-      this.currentSymbolsTarget.textContent = symbols.join(', ') || 'None selected'
-    }
-
-    // Show/hide multi-symbol indicator
-    const indicator = this.element.querySelector('.text-blue-600')
-    if (indicator) {
-      if (count > 1) {
-        indicator.style.display = 'inline'
-      } else {
-        indicator.style.display = 'none'
-      }
-    }
   }
 
   submitForm(event) {
@@ -44,12 +18,8 @@ export default class extends Controller {
     const form = event.target
     const formData = new FormData(form)
     
-    // Validate at least one symbol is selected
-    const selectedSymbols = formData.getAll('bot_setting[symbols][]')
-    if (selectedSymbols.length === 0) {
-      this.showFlash('error', 'Please select at least one trading symbol')
-      return
-    }
+    // Note: Symbol validation is now handled server-side via TrackedSymbol model
+    // No need for client-side symbol validation since symbols are managed separately
 
     // Show loading state
     this.setLoadingState(true)
