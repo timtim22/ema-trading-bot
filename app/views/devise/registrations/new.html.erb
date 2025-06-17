@@ -13,12 +13,12 @@
 
       <div class="mb-4">
         <%= f.label :email, class: "block text-gray-700" %>
-        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500" %>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-base py-2" %>
       </div>
 
       <div class="mb-4">
         <%= f.label :password, class: "block text-gray-700" %>
-        <%= f.password_field :password, autocomplete: "new-password", class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500" %>
+        <%= f.password_field :password, autocomplete: "new-password", class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-base py-2" %>
         <% if @minimum_password_length %>
           <p class="mt-1 text-sm text-gray-500">Minimum <%= @minimum_password_length %> characters</p>
         <% end %>
@@ -26,7 +26,7 @@
 
       <div class="mb-6">
         <%= f.label :password_confirmation, class: "block text-gray-700" %>
-        <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500" %>
+        <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-base py-2" %>
       </div>
 
       <%= f.submit "Sign Up", class: "w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition-colors" %>
