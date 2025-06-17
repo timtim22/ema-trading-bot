@@ -20,9 +20,26 @@ export default class extends Controller {
     console.log(`📊 Initial values: symbol=${this.symbolValue}, timeframe=${this.timeframeValue}`)
     this.logCurrentState()
     
+    // Make clearAllStoredData available globally for testing
+    window.clearChartData = () => {
+      const chartController = document.querySelector('[data-controller*="chart"]')
+      if (chartController && chartController.chartController) {
+        chartController.chartController.clearAllStoredData()
+        console.log('🧹 Cleared all chart data. Refresh the page to see fresh data.')
+      } else {
+        console.warn('Chart controller not found')
+      }
+    }
+    
     // Initialize debounce tracking
     this.lastUpdateTime = 0
     this.updateDebounceMs = 1000 // Minimum 1 second between updates
+    
+    // Track if this is the initial chart load to know when to fit content
+    this.isInitialLoad = true
+    
+    // Initialize data persistence manager
+    this.initializeDataPersistence()
     
     // Bind event handlers for real-time updates
     this.marketUpdateHandler = this.handleMarketUpdate.bind(this)
@@ -44,6 +61,9 @@ export default class extends Controller {
   }
 
   disconnect() {
+    // Save current chart data before disconnecting
+    this.saveCurrentChartDataOnDisconnect()
+    
     // Clean up event listeners
     document.removeEventListener('market:update', this.marketUpdateHandler)
     document.removeEventListener('market:ping', this.marketPingHandler)
@@ -54,6 +74,156 @@ export default class extends Controller {
     if (this.chart) {
       this.chart.remove()
       this.chart = null
+    }
+  }
+
+  // Save current chart state before disconnect (for page navigation/refresh)
+  saveCurrentChartDataOnDisconnect() {
+    try {
+      if (this.chart && this.candlestickSeries) {
+        const currentCandlesticks = this.candlestickSeries.data()
+        const currentEma5 = this.ema5Series ? this.ema5Series.data() : []
+        const currentEma8 = this.ema8Series ? this.ema8Series.data() : []
+        const currentEma22 = this.ema22Series ? this.ema22Series.data() : []
+        const currentVolume = this.volumeSeries ? this.volumeSeries.data() : []
+        
+        if (currentCandlesticks.length > 0) {
+          const chartData = {
+            symbol: this.symbolValue,
+            timeframe: this.timeframeValue,
+            price: currentCandlesticks[currentCandlesticks.length - 1]?.close || 0,
+            historical_candles: currentCandlesticks,
+            emas: {
+              ema5: currentEma5[currentEma5.length - 1]?.value || 0,
+              ema8: currentEma8[currentEma8.length - 1]?.value || 0,
+              ema22: currentEma22[currentEma22.length - 1]?.value || 0
+            },
+            volume: currentVolume[currentVolume.length - 1]?.value || 0,
+            volume_data: currentVolume,
+            ema5_data: currentEma5,
+            ema8_data: currentEma8,
+            ema22_data: currentEma22,
+            source: 'pre-disconnect'
+          }
+          
+          this.saveChartData(chartData)
+          console.log(`💾 Saved chart state before disconnect for ${this.symbolValue}`)
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to save chart data on disconnect:', error)
+    }
+  }
+
+  // Initialize data persistence manager
+  initializeDataPersistence() {
+    this.storagePrefix = 'ema_chart_data'
+    this.maxStorageAge = 30 * 60 * 1000 // 30 minutes in milliseconds
+    
+    console.log('💾 Initialized chart data persistence manager')
+  }
+  
+  // Generate storage key for current chart state
+  getStorageKey() {
+    return `${this.storagePrefix}_${this.symbolValue}_${this.timeframeValue}`
+  }
+  
+  // Save chart data to localStorage
+  saveChartData(data) {
+    try {
+      const storageData = {
+        symbol: this.symbolValue,
+        timeframe: this.timeframeValue,
+        timestamp: Date.now(),
+        data: data
+      }
+      
+      const key = this.getStorageKey()
+      localStorage.setItem(key, JSON.stringify(storageData))
+      console.log(`💾 Saved chart data for ${this.symbolValue} (${this.timeframeValue})`)
+    } catch (error) {
+      console.warn('⚠️ Failed to save chart data to localStorage:', error)
+    }
+  }
+  
+  // Load chart data from localStorage
+  loadChartData() {
+    try {
+      const key = this.getStorageKey()
+      const stored = localStorage.getItem(key)
+      
+      if (!stored) {
+        console.log(`💾 No stored data found for ${this.symbolValue} (${this.timeframeValue})`)
+        return null
+      }
+      
+      const storageData = JSON.parse(stored)
+      
+      // Check if data is still fresh
+      const dataAge = Date.now() - storageData.timestamp
+      if (dataAge > this.maxStorageAge) {
+        console.log(`💾 Stored data for ${this.symbolValue} is too old (${Math.round(dataAge / 60000)}min), ignoring`)
+        localStorage.removeItem(key)
+        return null
+      }
+      
+      console.log(`💾 Loaded fresh stored data for ${this.symbolValue} (${Math.round(dataAge / 1000)}s old)`)
+      return storageData.data
+    } catch (error) {
+      console.warn('⚠️ Failed to load chart data from localStorage:', error)
+      return null
+    }
+  }
+  
+  // Clean up old localStorage entries
+  cleanupStoredData() {
+    try {
+      const keysToRemove = []
+      
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && key.startsWith(this.storagePrefix)) {
+          try {
+            const data = JSON.parse(localStorage.getItem(key))
+            const dataAge = Date.now() - data.timestamp
+            
+            if (dataAge > this.maxStorageAge) {
+              keysToRemove.push(key)
+            }
+          } catch (e) {
+            // Invalid data, mark for removal
+            keysToRemove.push(key)
+          }
+        }
+      }
+      
+      keysToRemove.forEach(key => localStorage.removeItem(key))
+      
+      if (keysToRemove.length > 0) {
+        console.log(`💾 Cleaned up ${keysToRemove.length} old chart data entries`)
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to cleanup stored data:', error)
+    }
+  }
+
+  // Clear all stored chart data (for testing/debugging)
+  clearAllStoredData() {
+    try {
+      const keysToRemove = []
+      
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && key.startsWith(this.storagePrefix)) {
+          keysToRemove.push(key)
+        }
+      }
+      
+      keysToRemove.forEach(key => localStorage.removeItem(key))
+      
+      console.log(`🧹 Cleared ${keysToRemove.length} stored chart data entries`)
+    } catch (error) {
+      console.warn('⚠️ Failed to clear stored data:', error)
     }
   }
 
@@ -69,6 +239,9 @@ export default class extends Controller {
     
     // Show loading state
     container.innerHTML = '<div class="flex items-center justify-center h-full"><div class="text-gray-500"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div><p class="text-sm">Loading chart...</p></div></div>'
+    
+    // Clean up old stored data first
+    this.cleanupStoredData()
     
     // Load the chart library if not available
     if (typeof LightweightCharts === 'undefined') {
@@ -127,6 +300,15 @@ export default class extends Controller {
         rightPriceScale: {
           borderColor: '#d1d5db',
         },
+        leftPriceScale: {
+          visible: true,
+          borderColor: '#d1d5db',
+          scaleMargins: {
+            top: 0.85, // Align with volume series margins
+            bottom: 0,
+          },
+          entireTextOnly: true, // Show complete volume numbers
+        },
         crosshair: {
           mode: LightweightCharts.CrosshairMode.Normal,
         },
@@ -139,6 +321,63 @@ export default class extends Controller {
         borderVisible: false,
         wickUpColor: '#10b981',
         wickDownColor: '#ef4444',
+        priceLineVisible: false,
+        lastValueVisible: true,
+        priceScaleId: 'right', // Explicitly use right price scale
+      })
+      
+      // Create volume series with clear separation from price/EMA area
+      this.volumeSeries = this.chart.addHistogramSeries({
+        color: 'rgba(38, 166, 154, 0.6)', // Default color (will be overridden by individual bar colors)
+        priceFormat: {
+          type: 'volume',
+        },
+        priceScaleId: 'left', // Use left price scale for volume
+        scaleMargins: {
+          top: 0.85, // Volume uses bottom 15% of chart space (was 0.8 = 20%)
+          bottom: 0,
+        },
+        autoscaleInfoProvider: (original) => {
+          // Get current volume data for intelligent scaling
+          const volumeData = this.volumeSeries ? this.volumeSeries.data() : []
+          
+          if (!volumeData || volumeData.length === 0) {
+            return original()
+          }
+          
+          // Find min/max volume values
+          const volumes = volumeData.map(d => d.value)
+          const maxVolume = Math.max(...volumes)
+          
+          // Determine appropriate scale based on volume range
+          let adjustedMax
+          
+          if (maxVolume < 1000) {
+            // For very low volume (< 1K), show 0 to next hundred
+            adjustedMax = Math.max(Math.ceil(maxVolume / 100) * 100, 100)
+          } else if (maxVolume < 10000) {
+            // For low volume (1K-10K), show 0 to next thousand  
+            adjustedMax = Math.ceil(maxVolume / 1000) * 1000
+          } else if (maxVolume < 100000) {
+            // For medium volume (10K-100K), show 0 to next 10K
+            adjustedMax = Math.ceil(maxVolume / 10000) * 10000
+          } else if (maxVolume < 1000000) {
+            // For high volume (100K-1M), show 0 to next 100K
+            adjustedMax = Math.ceil(maxVolume / 100000) * 100000
+          } else {
+            // For very high volume (>1M), use original scaling
+            return original()
+          }
+          
+          console.log(`📊 Volume auto-scale: 0-${maxVolume} → 0-${adjustedMax.toLocaleString()}`)
+          
+          return {
+            priceRange: {
+              minValue: 0,
+              maxValue: adjustedMax,
+            },
+          }
+        },
       })
       
       // Create EMA line series with proper colors matching the legend
@@ -224,7 +463,7 @@ export default class extends Controller {
   handleMarketUpdate(event) {
     if (!this.chart || !event.detail) return
     
-    const { symbol, price, timestamp, ohlc, emas } = event.detail
+    const { symbol, price, timestamp, ohlc, emas, volume } = event.detail
     
     // Only update if this is for our current symbol
     if (symbol !== this.symbolValue) return
@@ -242,6 +481,9 @@ export default class extends Controller {
     // DEBUG: Try to update positions from chart controller
     this.updatePositionsFromChart(symbol, price)
     
+    // Save updated market data to cache for persistence
+    this.saveMarketUpdateToCache(event.detail)
+    
     // Validate OHLC data before updating
     if (ohlc && this.candlestickSeries && this.isValidOHLC(ohlc)) {
       try {
@@ -249,8 +491,65 @@ export default class extends Controller {
         const existingData = this.candlestickSeries.data()
         
         if (!existingData || existingData.length === 0) {
-          console.log(`📊 Chart not initialized for ${symbol}, fetching initial data...`)
-          this.fetchImmediateData()
+          console.log(`📊 Chart not initialized for ${symbol}, initializing with current OHLC data...`)
+          
+          // Instead of fetching data and returning, initialize with current OHLC immediately
+          const validTimestamp = this.validateTimestamp(timestamp)
+          const candlestickData = {
+            time: validTimestamp,
+            open: this.validatePrice(ohlc.open),
+            high: this.validatePrice(ohlc.high),
+            low: this.validatePrice(ohlc.low),
+            close: this.validatePrice(ohlc.close)
+          }
+          
+          if (this.isValidCandlestick(candlestickData)) {
+            this.candlestickSeries.setData([candlestickData])
+            console.log(`✅ Initialized chart with current OHLC data for ${symbol}`)
+            
+            // Also initialize EMAs if available
+            if (emas) {
+              if (emas.ema5 && this.ema5Series) {
+                this.ema5Series.setData([{ time: validTimestamp, value: this.validatePrice(emas.ema5) }])
+              }
+              if (emas.ema8 && this.ema8Series) {
+                this.ema8Series.setData([{ time: validTimestamp, value: this.validatePrice(emas.ema8) }])
+              }
+              if (emas.ema22 && this.ema22Series) {
+                this.ema22Series.setData([{ time: validTimestamp, value: this.validatePrice(emas.ema22) }])
+              }
+            }
+            
+            // Initialize volume if available
+            if (volume && this.volumeSeries && volume > 0) {
+              // Determine volume color based on candlestick sentiment
+              const isBullish = ohlc.close >= ohlc.open
+              const volumeColor = isBullish ? 
+                'rgba(16, 185, 129, 0.7)' : // Green for bullish
+                'rgba(239, 68, 68, 0.7)'    // Red for bearish
+              
+              this.volumeSeries.setData([{ 
+                time: validTimestamp, 
+                value: volume,
+                color: volumeColor
+              }])
+              console.log(`✅ Initialized volume data for ${symbol}: ${volume.toLocaleString()}`)
+              
+              // Trigger scale recalculation for proper initial scaling
+              setTimeout(() => this.recalculateVolumeScale(), 100)
+            } else {
+              console.log(`⚠️ Volume initialization skipped for ${symbol}: volume=${volume}, volumeSeries=${!!this.volumeSeries}`)
+            }
+            
+            // Only fit content on initial load, not during updates to preserve zoom
+            if (this.isInitialLoad) {
+              this.setFocusedVisibleRange()
+              this.isInitialLoad = false
+              console.log('📷 Initial load: fitted content to chart')
+            } else {
+              console.log('🔄 Update: preserving user zoom state')
+            }
+          }
           return
         }
         
@@ -346,6 +645,35 @@ export default class extends Controller {
           } catch (error) {
             console.error('❌ Error updating EMA22 series:', error)
           }
+        }
+      }
+    }
+    
+    // Update volume if provided and series exists
+    if (volume && this.volumeSeries && volume > 0 && this.candlestickSeries) {
+      const existingData = this.candlestickSeries.data()
+      
+      if (existingData && existingData.length > 0) {
+        const validTimestamp = this.validateTimestamp(timestamp)
+        
+        try {
+          // Determine volume color based on candlestick sentiment
+          const isBullish = ohlc.close >= ohlc.open
+          const volumeColor = isBullish ? 
+            'rgba(16, 185, 129, 0.7)' : // Green for bullish
+            'rgba(239, 68, 68, 0.7)'    // Red for bearish
+          
+          this.volumeSeries.update({
+            time: validTimestamp,
+            value: volume,
+            color: volumeColor
+          })
+          console.log(`✅ Updated volume for ${symbol}: ${volume.toLocaleString()} (${isBullish ? 'bullish' : 'bearish'})`)
+          
+          // Trigger scale recalculation for better visibility
+          this.recalculateVolumeScale()
+        } catch (error) {
+          console.error('❌ Error updating volume series:', error)
         }
       }
     }
@@ -657,6 +985,9 @@ export default class extends Controller {
     console.log(`📊 Changing timeframe from ${this.timeframeValue} to ${newTimeframe}`)
     console.log(`📊 Current data points: ${this.getDataPointsForTimeframe()}, interval: ${this.getIntervalMinutes()}min`)
     
+    // Set flag to indicate timeframe change (will allow fitContent)
+    this.pendingTimeframeChange = true
+    
     // Update timeframe value first
     this.timeframeValue = newTimeframe
     
@@ -694,12 +1025,6 @@ export default class extends Controller {
     }
   }
 
-  // Test method to verify button connectivity
-  testButtonClick() {
-    console.log(`🧪 TEST BUTTON CLICK METHOD CALLED!`)
-    console.log(`🧪 This should appear when any timeframe button is clicked`)
-    return true
-  }
   
   // Fetch data for specific timeframe
   async fetchDataForTimeframe(timeframe) {
@@ -749,7 +1074,7 @@ export default class extends Controller {
       this.ema5Series.setData(sampleData.ema5)
       this.ema8Series.setData(sampleData.ema8)
       this.ema22Series.setData(sampleData.ema22)
-      this.chart.timeScale().fitContent()
+      this.setFocusedVisibleRange()
       
       this.hideLoadingState()
     }
@@ -762,14 +1087,28 @@ export default class extends Controller {
       return
     }
     
+    // Save current visible range unless this is initial load or timeframe change
+    const isTimeframeChange = this.pendingTimeframeChange || this.isInitialLoad
+    const savedRange = isTimeframeChange ? null : this.saveVisibleRange()
+    
     try {
       console.log(`📊 Processing market data for ${marketData.symbol}:`, marketData)
+      
+      // Log data source information
+      if (marketData.source === 'alpaca_historical') {
+        console.log(`🎯 USING REAL HISTORICAL DATA from Alpaca for ${marketData.symbol}`)
+      } else if (marketData.has_stored_data) {
+        console.log(`📚 Using stored EMA data to generate historical candles for ${marketData.symbol}`)
+      } else {
+        console.log(`⚠️ USING GENERATED/SAMPLE DATA for ${marketData.symbol} - real data not available`)
+      }
       
       // Use historical candles if available, otherwise generate from current data
       let candlesticks, ema5Data, ema8Data, ema22Data
       
       if (marketData.historical_candles && marketData.historical_candles.length > 0) {
-        console.log(`📊 Using ${marketData.historical_candles.length} historical candles`)
+        const dataSource = marketData.source === 'alpaca_historical' ? 'REAL ALPACA' : 'GENERATED'
+        console.log(`📊 Using ${marketData.historical_candles.length} historical candles (${dataSource})`)
         
         // Use real historical data with validation
         candlesticks = marketData.historical_candles
@@ -892,6 +1231,8 @@ export default class extends Controller {
           console.log(`✅ Successfully set ${fallbackData.length} fallback candlesticks`)
         } else {
           console.log(`📊 Setting ${validCandlesticks.length} validated candlesticks`)
+          console.log(`📊 Sample candlestick data:`, validCandlesticks.slice(0, 3))
+          console.log(`📊 Price range: $${Math.min(...validCandlesticks.map(c => c.low)).toFixed(2)} - $${Math.max(...validCandlesticks.map(c => c.high)).toFixed(2)}`)
           this.candlestickSeries.setData(validCandlesticks)
           console.log(`✅ Successfully set ${validCandlesticks.length} validated candlesticks`)
         }
@@ -970,9 +1311,24 @@ export default class extends Controller {
         }
       }
       
-      // Fit content to show all data with delay
+      // Conditionally fit content or restore zoom based on context
       await new Promise(resolve => setTimeout(resolve, 50))
-      this.chart.timeScale().fitContent()
+      
+      if (isTimeframeChange) {
+        // For timeframe changes or initial load, set focused visible range instead of fitting all content
+        this.setFocusedVisibleRange()
+        this.isInitialLoad = false
+        this.pendingTimeframeChange = false
+        console.log('📷 Timeframe change: set focused visible range')
+      } else if (savedRange) {
+        // Restore user's previous zoom state
+        this.restoreVisibleRange(savedRange)
+        console.log('🔄 Data update: restored user zoom state')
+      } else {
+        // Fallback: set focused range if no saved range
+        this.setFocusedVisibleRange()
+        console.log('📷 Fallback: set focused visible range')
+      }
       
       console.log(`✅ Successfully updated chart with ${marketData.timeframe} timeframe data for ${marketData.symbol}`)
     } catch (error) {
@@ -1112,6 +1468,7 @@ export default class extends Controller {
     const ema5 = []
     const ema8 = []
     const ema22 = []
+    const volume = []
     
     // Adjust data points based on timeframe
     const dataPoints = this.getDataPointsForTimeframe()
@@ -1134,6 +1491,14 @@ export default class extends Controller {
     let trendStrength = 1
     
     switch (this.timeframeValue) {
+      case '1m':
+        volatilityMultiplier = 0.1  // Very low volatility for 1-minute data
+        trendStrength = 0.2
+        break
+      case '2m':
+        volatilityMultiplier = 0.2  // Low volatility for 2-minute data
+        trendStrength = 0.3
+        break
       case '5m':
         volatilityMultiplier = 0.3  // Low volatility for 5-minute data
         trendStrength = 0.5
@@ -1145,10 +1510,6 @@ export default class extends Controller {
       case '1h':
         volatilityMultiplier = 1.2  // Higher volatility for hourly data
         trendStrength = 1.5
-        break
-      case '1d':
-        volatilityMultiplier = 2.5  // Much higher volatility for daily data
-        trendStrength = 3.0
         break
       default:
         volatilityMultiplier = 1
@@ -1224,6 +1585,36 @@ export default class extends Controller {
         value: parseFloat(ema22Value.toFixed(2))
       })
       
+      // Generate volume data with timeframe-appropriate values
+      let baseVolume
+      
+      // Adjust base volume based on timeframe for more realistic and visible volumes
+      switch (this.timeframeValue) {
+        case '1m':
+          baseVolume = 500 // 500 base for 1-minute bars (will scale to 0-1.5K)
+          break
+        case '2m':
+          baseVolume = 800 // 800 base for 2-minute bars (will scale to 0-2K)
+          break
+        case '5m':
+          baseVolume = 1500 // 1.5K base for 5-minute bars (will scale to 0-4K)
+          break
+        case '15m':
+          baseVolume = 3500 // 3.5K base for 15-minute bars (will scale to 0-8K)
+          break
+        case '1h':
+          baseVolume = 8000 // 8K base for hourly bars (will scale to 0-15K)
+          break
+        default:
+          baseVolume = 1500
+      }
+      
+      const volumeVariation = (0.3 + Math.random() * 1.2) // 0.3x to 1.5x variation (reduced range)
+      const sampleVolume = Math.floor(baseVolume * volumeVariation)
+      
+      // Use helper method for consistent volume data creation
+      volume.push(this.createVolumeDataPoint(timestamp, sampleVolume, candleData))
+      
       basePrice = close // Use close as next open
     }
     
@@ -1236,26 +1627,29 @@ export default class extends Controller {
     console.log(`📊 Generated ${candlesticks.length} sample candlesticks for ${this.symbolValue} (${this.timeframeValue})`)
     console.log(`📊 Sample data time range: ${new Date(candlesticks[0]?.time * 1000).toLocaleString()} to ${new Date(candlesticks[candlesticks.length - 1]?.time * 1000).toLocaleString()}`)
     console.log(`📊 Price range: $${Math.min(...candlesticks.map(c => c.low)).toFixed(2)} - $${Math.max(...candlesticks.map(c => c.high)).toFixed(2)}`)
+    console.log(`📊 Volume range: ${Math.min(...volume.map(v => v.value)).toLocaleString()} - ${Math.max(...volume.map(v => v.value)).toLocaleString()}`)
     
-    return { candlesticks, ema5, ema8, ema22 }
+    return { candlesticks, ema5, ema8, ema22, volume }
   }
   
   getDataPointsForTimeframe() {
     switch (this.timeframeValue) {
-      case '5m': return 288 // 24 hours of 5-minute candles
-      case '15m': return 96  // 24 hours of 15-minute candles
-      case '1h': return 168  // 7 days of hourly candles
-      case '1d': return 90   // 90 days of daily candles
-      default: return 100
+      case '1m': return 60  // 1 hour of 1-minute candles
+      case '2m': return 60  // 2 hours of 2-minute candles
+      case '5m': return 48  // 4 hours of 5-minute candles
+      case '15m': return 32 // 8 hours of 15-minute candles
+      case '1h': return 48  // 2 days of hourly candles
+      default: return 48
     }
   }
   
   getIntervalMinutes() {
     switch (this.timeframeValue) {
+      case '1m': return 1
+      case '2m': return 2
       case '5m': return 5
       case '15m': return 15
       case '1h': return 60
-      case '1d': return 1440 // 24 * 60
       default: return 5
     }
   }
@@ -1592,6 +1986,73 @@ export default class extends Controller {
       // Show loading state
       this.showLoadingState()
       
+      // First, try to load cached data
+      const cachedData = this.loadChartData()
+      if (cachedData) {
+        console.log(`💾 Using cached data for ${this.symbolValue} (${this.timeframeValue})`)
+        
+        // Update chart with cached data
+        await this.updateChartWithCachedData(cachedData)
+        
+        // Hide loading state
+        this.hideLoadingState()
+        
+        // Fetch fresh data in the background to update cache
+        this.fetchFreshDataInBackground()
+        return
+      }
+      
+      // No cached data, fetch from API
+      console.log(`🌐 No cached data, fetching from API for ${this.symbolValue} (${this.timeframeValue})`)
+      await this.fetchFreshData()
+      
+    } catch (error) {
+      console.error(`❌ Error in fetchImmediateData for ${this.symbolValue}:`, error)
+      
+      // Always fall back to sample data for the current symbol when fetch fails
+      console.log(`🔄 Falling back to sample data for ${this.symbolValue}`)
+      this.initializeWithSampleData()
+      
+      this.hideLoadingState()
+    }
+  }
+  
+  // Fetch fresh data from API
+  async fetchFreshData() {
+    const response = await fetch(`/dashboard/market_data?symbol=${this.symbolValue}&timeframe=${this.timeframeValue}`, {
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+    
+    const result = await response.json()
+    
+    if (result.success && result.data) {
+      console.log(`✅ Received fresh data for ${this.symbolValue}:`, result.data)
+      
+      // Update chart with real data immediately
+      await this.updateChartWithTimeframeData(result.data)
+      
+      // Save the data to cache for future use
+      this.saveChartData(result.data)
+      
+      // Hide loading state
+      this.hideLoadingState()
+    } else {
+      throw new Error(result.error || 'Failed to fetch market data')
+    }
+  }
+  
+  // Fetch fresh data in the background (doesn't update loading state)
+  async fetchFreshDataInBackground() {
+    try {
+      console.log(`🔄 Fetching fresh data in background for ${this.symbolValue}...`)
+      
       const response = await fetch(`/dashboard/market_data?symbol=${this.symbolValue}&timeframe=${this.timeframeValue}`, {
         headers: {
           'Accept': 'application/json',
@@ -1606,24 +2067,16 @@ export default class extends Controller {
       const result = await response.json()
       
       if (result.success && result.data) {
-        console.log(`✅ Received immediate data for ${this.symbolValue}:`, result.data)
+        console.log(`✅ Background fetch completed for ${this.symbolValue}`)
         
-        // Update chart with real data immediately
-        await this.updateChartWithTimeframeData(result.data)
+        // Save the fresh data to cache
+        this.saveChartData(result.data)
         
-        // Hide loading state
-        this.hideLoadingState()
-      } else {
-        throw new Error(result.error || 'Failed to fetch market data')
+        // Optionally update chart with newer data if it's significantly different
+        await this.updateChartWithFreshData(result.data)
       }
     } catch (error) {
-      console.error(`❌ Error fetching immediate data for ${this.symbolValue}:`, error)
-      
-      // Always fall back to sample data for the current symbol when fetch fails
-        console.log(`🔄 Falling back to sample data for ${this.symbolValue}`)
-        this.initializeWithSampleData()
-      
-      this.hideLoadingState()
+      console.warn(`⚠️ Background fetch failed for ${this.symbolValue}:`, error)
     }
   }
   
@@ -1655,8 +2108,16 @@ export default class extends Controller {
         this.ema22Series.setData(sampleData.ema22)
       }
       
-      // Fit content to show all data
-      this.chart.timeScale().fitContent()
+      if (sampleData.volume && sampleData.volume.length > 0 && this.volumeSeries) {
+        this.volumeSeries.setData(sampleData.volume)
+        console.log(`📊 Initialized ${this.symbolValue} chart with ${sampleData.volume.length} volume bars`)
+        
+        // Trigger scale recalculation for proper volume scaling
+        setTimeout(() => this.recalculateVolumeScale(), 100)
+      }
+      
+      // Set focused visible range instead of fitting all content
+      this.setFocusedVisibleRange()
       
       console.log(`✅ Chart initialized with sample data for ${this.symbolValue}`)
     } catch (error) {
@@ -1706,12 +2167,12 @@ export default class extends Controller {
       // Create timestamps in ascending order (older to newer)
       const timestamp = now - ((length - 1 - i) * 5 * 60)
       
-      // Create valid OHLC data with slight variations
-      const basePrice = 100 + (Math.sin(i / 10) * 2)
+      // Create valid OHLC data with MORE visible variations for debugging
+      const basePrice = 348 + (Math.sin(i / 10) * 5) // Larger price swings around $348
       const open = parseFloat(basePrice.toFixed(2))
-      const close = parseFloat((basePrice + (Math.random() - 0.5) * 0.5).toFixed(2))
-      const high = parseFloat(Math.max(open, close, basePrice + Math.random() * 0.3).toFixed(2))
-      const low = parseFloat(Math.min(open, close, basePrice - Math.random() * 0.3).toFixed(2))
+      const close = parseFloat((basePrice + (Math.random() - 0.5) * 2).toFixed(2)) // Larger close variation
+      const high = parseFloat(Math.max(open, close, basePrice + Math.random() * 3).toFixed(2)) // Larger highs
+      const low = parseFloat(Math.min(open, close, basePrice - Math.random() * 3).toFixed(2)) // Larger lows
       
       data.push({
         time: timestamp,
@@ -1942,5 +2403,421 @@ export default class extends Controller {
     console.log(`   Interval: ${this.getIntervalMinutes()} minutes`)
     console.log(`   Element: `, this.element)
     console.log(`   Targets: `, this.targets)
+  }
+
+  // Helper method to recalculate volume scale for better visibility
+  recalculateVolumeScale() {
+    if (!this.volumeSeries || !this.chart) return
+    
+    try {
+      // For LightweightCharts v4.2.3, we need to trigger the autoscaleInfoProvider
+      // by causing the chart to recalculate the scale
+      
+      // Get current volume data
+      const volumeData = this.volumeSeries.data()
+      
+      if (!volumeData || volumeData.length === 0) {
+        console.log('📊 No volume data for scale calculation')
+        return
+      }
+      
+      // Find max volume for logging
+      const volumes = volumeData.map(d => d.value)
+      const maxVolume = Math.max(...volumes)
+      
+      console.log(`📊 Triggering volume scale recalculation for max volume: ${maxVolume.toLocaleString()}`)
+      
+      // Force update by applying options instead of fitContent to preserve zoom
+      this.volumeSeries.applyOptions({})
+      
+      console.log('📊 Volume scale recalculated without affecting zoom')
+      
+    } catch (error) {
+      console.error('❌ Error recalculating volume scale:', error)
+    }
+  }
+
+  // Method to save current visible range
+  saveVisibleRange() {
+    if (!this.chart) return null
+    
+    try {
+      const visibleRange = this.chart.timeScale().getVisibleRange()
+      console.log('💾 Saved visible range:', visibleRange)
+      return visibleRange
+    } catch (error) {
+      console.warn('⚠️ Could not save visible range:', error)
+      return null
+    }
+  }
+  
+  // Method to restore previously saved visible range
+  restoreVisibleRange(savedRange) {
+    if (!this.chart || !savedRange) return
+    
+    try {
+      // Small delay to ensure chart is ready
+      setTimeout(() => {
+        this.chart.timeScale().setVisibleRange(savedRange)
+        console.log('📷 Restored visible range:', savedRange)
+      }, 100)
+    } catch (error) {
+      console.warn('⚠️ Could not restore visible range:', error)
+    }
+  }
+
+  // Helper method to create volume data with proper color coding
+  createVolumeDataPoint(timestamp, volume, candlestickData) {
+    // Determine color based on candlestick sentiment
+    const isBullish = candlestickData.close >= candlestickData.open
+    
+    // Use slightly different opacity for better visual hierarchy
+    const baseOpacity = 0.7
+    const volumeColor = isBullish ? 
+      `rgba(16, 185, 129, ${baseOpacity})` : // Green for bullish (matches candlestick upColor)
+      `rgba(239, 68, 68, ${baseOpacity})`    // Red for bearish (matches candlestick downColor)
+    
+    return {
+      time: timestamp,
+      value: volume,
+      color: volumeColor
+    }
+  }
+
+  // Update chart with cached data
+  async updateChartWithCachedData(cachedData) {
+    if (!this.chart || !this.candlestickSeries) {
+      console.warn("Chart not ready for cached data update")
+      return
+    }
+    
+    try {
+      console.log(`💾 Restoring chart from cached data for ${cachedData.symbol}`)
+      
+      // Prepare data structure compatible with updateChartWithTimeframeData
+      const marketData = {
+        symbol: cachedData.symbol,
+        timeframe: cachedData.timeframe,
+        price: cachedData.price,
+        historical_candles: cachedData.historical_candles || [],
+        emas: cachedData.emas || { ema5: 0, ema8: 0, ema22: 0 },
+        volume: cachedData.volume || 0,
+        source: cachedData.source || 'cached',
+        has_stored_data: cachedData.has_stored_data || false
+      }
+      
+      // If we have specific EMA data arrays, use them
+      if (cachedData.ema5_data || cachedData.ema8_data || cachedData.ema22_data) {
+        console.log(`💾 Using cached EMA data arrays`)
+        
+        // Set data directly from cache
+        if (cachedData.historical_candles && cachedData.historical_candles.length > 0) {
+          const validCandlesticks = this.validateChartData(cachedData.historical_candles, 'candlestick')
+          if (validCandlesticks.length > 0) {
+            this.candlestickSeries.setData(validCandlesticks)
+            console.log(`💾 Restored ${validCandlesticks.length} candlesticks from cache`)
+          }
+        }
+        
+        // Set EMA data from cache
+        if (cachedData.ema5_data && cachedData.ema5_data.length > 0) {
+          const validEma5 = this.validateChartData(cachedData.ema5_data, 'line')
+          if (validEma5.length > 0) {
+            this.ema5Series.setData(validEma5)
+            console.log(`💾 Restored ${validEma5.length} EMA5 points from cache`)
+          }
+        }
+        
+        if (cachedData.ema8_data && cachedData.ema8_data.length > 0) {
+          const validEma8 = this.validateChartData(cachedData.ema8_data, 'line')
+          if (validEma8.length > 0) {
+            this.ema8Series.setData(validEma8)
+            console.log(`💾 Restored ${validEma8.length} EMA8 points from cache`)
+          }
+        }
+        
+        if (cachedData.ema22_data && cachedData.ema22_data.length > 0) {
+          const validEma22 = this.validateChartData(cachedData.ema22_data, 'line')
+          if (validEma22.length > 0) {
+            this.ema22Series.setData(validEma22)
+            console.log(`💾 Restored ${validEma22.length} EMA22 points from cache`)
+          }
+        }
+        
+        // Set volume data from cache
+        if (cachedData.volume_data && cachedData.volume_data.length > 0 && this.volumeSeries) {
+          const validVolume = cachedData.volume_data.filter(v => v.value > 0 && v.time && v.color)
+          if (validVolume.length > 0) {
+            this.volumeSeries.setData(validVolume)
+            console.log(`💾 Restored ${validVolume.length} volume bars from cache`)
+            
+            // Trigger scale recalculation
+            setTimeout(() => this.recalculateVolumeScale(), 100)
+          }
+        }
+        
+        // Set focused visible range instead of fitting all content
+        this.setFocusedVisibleRange()
+        this.isInitialLoad = false
+        
+      } else {
+        // Fall back to standard data processing if no specific cached arrays
+        await this.updateChartWithTimeframeData(marketData)
+      }
+      
+      console.log(`✅ Successfully restored chart from cached data`)
+    } catch (error) {
+      console.error("❌ Error updating chart with cached data:", error)
+      
+      // Fall back to fetching fresh data
+      await this.fetchFreshData()
+    }
+  }
+  
+  // Update chart with fresh data (preserves zoom if chart already has data)
+  async updateChartWithFreshData(freshData) {
+    if (!this.chart || !this.candlestickSeries) {
+      return
+    }
+    
+    try {
+      // Check if chart has existing data
+      const existingData = this.candlestickSeries.data()
+      
+      if (existingData && existingData.length > 0) {
+        console.log(`🔄 Updating chart with fresh data while preserving zoom`)
+        
+        // Save current visible range to preserve zoom
+        const savedRange = this.saveVisibleRange()
+        
+        // Update chart data
+        await this.updateChartWithTimeframeData(freshData)
+        
+        // Restore zoom if we had a saved range
+        if (savedRange) {
+          this.restoreVisibleRange(savedRange)
+        }
+      } else {
+        // No existing data, just update normally
+        await this.updateChartWithTimeframeData(freshData)
+      }
+    } catch (error) {
+      console.warn(`⚠️ Error updating chart with fresh data:`, error)
+    }
+  }
+
+  // Save market update to cache (incremental updates)
+  saveMarketUpdateToCache(marketUpdate) {
+    try {
+      // Validate input
+      if (!marketUpdate) {
+        console.warn('⚠️ No market update data to save to cache')
+        return
+      }
+      
+      // Load existing cached data
+      let cachedData = this.loadChartData()
+      
+      if (!cachedData) {
+        // No existing cache, create new cache entry with current chart data
+        const currentCandlesticks = this.candlestickSeries ? this.candlestickSeries.data() : []
+        const currentEma5 = this.ema5Series ? this.ema5Series.data() : []
+        const currentEma8 = this.ema8Series ? this.ema8Series.data() : []
+        const currentEma22 = this.ema22Series ? this.ema22Series.data() : []
+        const currentVolume = this.volumeSeries ? this.volumeSeries.data() : []
+        
+        cachedData = {
+          symbol: this.symbolValue,
+          timeframe: this.timeframeValue,
+          price: marketUpdate.price,
+          historical_candles: currentCandlesticks,
+          emas: marketUpdate.emas || { ema5: 0, ema8: 0, ema22: 0 },
+          volume: marketUpdate.volume || 0,
+          volume_data: currentVolume,
+          ema5_data: currentEma5,
+          ema8_data: currentEma8,
+          ema22_data: currentEma22,
+          source: marketUpdate.source || 'real-time'
+        }
+      } else {
+        // Update existing cached data with new market data
+        if (marketUpdate.price) cachedData.price = marketUpdate.price
+        if (marketUpdate.emas) cachedData.emas = marketUpdate.emas
+        if (marketUpdate.volume) cachedData.volume = marketUpdate.volume
+        if (marketUpdate.source) cachedData.source = marketUpdate.source
+        
+        // Update the latest data points in cached historical data
+        if (marketUpdate.ohlc && this.candlestickSeries) {
+          const validTimestamp = this.validateTimestamp(marketUpdate.timestamp)
+          const candlestickData = {
+            time: validTimestamp,
+            open: this.validatePrice(marketUpdate.ohlc.open),
+            high: this.validatePrice(marketUpdate.ohlc.high),
+            low: this.validatePrice(marketUpdate.ohlc.low),
+            close: this.validatePrice(marketUpdate.ohlc.close)
+          }
+          
+          if (this.isValidCandlestick(candlestickData)) {
+            // Update or append to historical candles
+            if (!cachedData.historical_candles) cachedData.historical_candles = []
+            
+            // Check if we need to update the last candle or add a new one
+            const lastCandle = cachedData.historical_candles[cachedData.historical_candles.length - 1]
+            if (lastCandle && lastCandle.time === validTimestamp) {
+              // Update existing candle
+              cachedData.historical_candles[cachedData.historical_candles.length - 1] = candlestickData
+            } else {
+              // Add new candle
+              cachedData.historical_candles.push(candlestickData)
+              
+              // Keep only the most recent data (same as getDataPointsForTimeframe())
+              const maxDataPoints = this.getDataPointsForTimeframe()
+              if (cachedData.historical_candles.length > maxDataPoints) {
+                cachedData.historical_candles = cachedData.historical_candles.slice(-maxDataPoints)
+              }
+            }
+          }
+        }
+        
+        // Update EMA data arrays - fix the forEach error by checking for valid emas object
+        if (marketUpdate.emas && typeof marketUpdate.emas === 'object' && marketUpdate.timestamp) {
+          const validTimestamp = this.validateTimestamp(marketUpdate.timestamp)
+          
+          // Use Object.keys instead of forEach to iterate over ema properties
+          Object.keys(marketUpdate.emas).forEach(emaType => {
+            if (['ema5', 'ema8', 'ema22'].includes(emaType)) {
+              const emaValue = marketUpdate.emas[emaType]
+              if (emaValue && this.isValidEMAValue(emaValue)) {
+                const dataKey = `${emaType}_data`
+                if (!cachedData[dataKey]) cachedData[dataKey] = []
+                
+                const emaDataPoint = { time: validTimestamp, value: this.validatePrice(emaValue) }
+                
+                // Update or append EMA data point
+                const lastEma = cachedData[dataKey][cachedData[dataKey].length - 1]
+                if (lastEma && lastEma.time === validTimestamp) {
+                  cachedData[dataKey][cachedData[dataKey].length - 1] = emaDataPoint
+                } else {
+                  cachedData[dataKey].push(emaDataPoint)
+                  
+                  // Keep only recent data points
+                  const maxDataPoints = this.getDataPointsForTimeframe()
+                  if (cachedData[dataKey].length > maxDataPoints) {
+                    cachedData[dataKey] = cachedData[dataKey].slice(-maxDataPoints)
+                  }
+                }
+              }
+            }
+          })
+        }
+        
+        // Update volume data
+        if (marketUpdate.volume && marketUpdate.ohlc && marketUpdate.timestamp) {
+          const validTimestamp = this.validateTimestamp(marketUpdate.timestamp)
+          const isBullish = marketUpdate.ohlc.close >= marketUpdate.ohlc.open
+          const volumeColor = isBullish ? 
+            'rgba(16, 185, 129, 0.7)' : 
+            'rgba(239, 68, 68, 0.7)'
+          
+          const volumeDataPoint = {
+            time: validTimestamp,
+            value: marketUpdate.volume,
+            color: volumeColor
+          }
+          
+          if (!cachedData.volume_data) cachedData.volume_data = []
+          
+          // Update or append volume data point
+          const lastVolume = cachedData.volume_data[cachedData.volume_data.length - 1]
+          if (lastVolume && lastVolume.time === validTimestamp) {
+            cachedData.volume_data[cachedData.volume_data.length - 1] = volumeDataPoint
+          } else {
+            cachedData.volume_data.push(volumeDataPoint)
+            
+            // Keep only recent data points
+            const maxDataPoints = this.getDataPointsForTimeframe()
+            if (cachedData.volume_data.length > maxDataPoints) {
+              cachedData.volume_data = cachedData.volume_data.slice(-maxDataPoints)
+            }
+          }
+        }
+      }
+      
+      // Save updated cache
+      this.saveChartData(cachedData)
+      
+    } catch (error) {
+      console.warn('⚠️ Failed to save market update to cache:', error)
+    }
+  }
+
+  // Set focused visible range showing only recent data instead of all historical data
+  setFocusedVisibleRange() {
+    if (!this.chart || !this.candlestickSeries) {
+      return
+    }
+
+    try {
+      const data = this.candlestickSeries.data()
+      if (!data || data.length === 0) {
+        return
+      }
+
+      // Calculate how much recent data to show based on timeframe
+      let visibleDataPoints
+      switch (this.timeframeValue) {
+        case '1m':
+          visibleDataPoints = 15 // Show last 15 minutes (15 * 1min = 15min)
+          break
+        case '2m':
+          visibleDataPoints = 15 // Show last 30 minutes (15 * 2min = 30min)
+          break
+        case '5m':
+          visibleDataPoints = 12 // Show last 1 hour (12 * 5min = 60min)
+          break
+        case '15m':
+          visibleDataPoints = 16 // Show last 4 hours (16 * 15min = 240min)
+          break
+        case '1h':
+          visibleDataPoints = 24 // Show last 24 hours (24 * 1h = 24h)
+          break
+        default:
+          visibleDataPoints = 12
+      }
+
+      // Ensure we don't try to show more data than we have
+      visibleDataPoints = Math.min(visibleDataPoints, data.length)
+      
+      if (visibleDataPoints < 2) {
+        // If we have very little data, just fit content
+        this.setFocusedVisibleRange()
+        return
+      }
+
+      // Get the time range for the most recent data
+      const endIndex = data.length - 1
+      const startIndex = Math.max(0, endIndex - visibleDataPoints + 1)
+      
+      const startTime = data[startIndex].time
+      const endTime = data[endIndex].time
+      
+      // Add some padding (10% on each side)
+      const timeRange = endTime - startTime
+      const padding = timeRange * 0.1
+      
+      const visibleRange = {
+        from: startTime - padding,
+        to: endTime + padding
+      }
+
+      // Set the visible range
+      this.chart.timeScale().setVisibleRange(visibleRange)
+      
+      console.log(`📷 Set focused range: showing ${visibleDataPoints} recent ${this.timeframeValue} candles`)
+      
+    } catch (error) {
+      console.warn('⚠️ Error setting focused visible range, falling back to fitContent:', error)
+      this.setFocusedVisibleRange()
+    }
   }
 }

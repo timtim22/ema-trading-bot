@@ -44,6 +44,7 @@ class OrderService
         symbol: symbol,
         amount: amount,
         fill_price: primary_order.filled_avg_price&.to_f,
+        fill_qty: primary_order.filled_qty&.to_f,
         status: primary_order.status,
         created_at: primary_order.created_at,
         filled_at: primary_order.filled_at,

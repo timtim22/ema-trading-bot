@@ -1,0 +1,73 @@
+EMA TRADING BOT - DETAILED TRADING LOG
+==================================================
+Generated: 2025-06-16 08:20:19 UTC
+Mode: Paper Trading (Simulation)
+Endpoint: https://paper-api.alpaca.markets
+
+ACCOUNT STATUS:
+--------------------
+Account ID: ba6d854f-4157-4c15-a3b3-ff41ea296b88
+Portfolio Value: $99726.7
+Cash Balance: $N/A
+Buying Power: $193726.69
+Day Trade Count: 0
+
+CURRENT POSITIONS:
+--------------------
+AAPL: 24.055707409 shares @ $ (P/L: $-239.374954)
+TSLA: 2.913044744 shares @ $ (P/L: $-33.907841)
+
+MARKET DATA ANALYSIS:
+--------------------
+
+TSLA Analysis at 08:20:20:
+  Error analyzing TSLA: undefined method `get_current_price' for #<AlpacaDataService:0x000000010644d430 @api_key_id="PKDAV3U9ZQPHTV5BBKQ5", @api_secret_key="3u3PYtyHdlmtlfQZNrMyDP2kYOIzMLjI7Lohyv8E">
+
+AAPL Analysis at 08:20:20:
+  Error analyzing AAPL: undefined method `get_current_price' for #<AlpacaDataService:0x000000010644d0c0 @api_key_id="PKDAV3U9ZQPHTV5BBKQ5", @api_secret_key="3u3PYtyHdlmtlfQZNrMyDP2kYOIzMLjI7Lohyv8E">
+
+NVDA Analysis at 08:20:20:
+  Error analyzing NVDA: undefined method `get_current_price' for #<AlpacaDataService:0x000000010644cd50 @api_key_id="PKDAV3U9ZQPHTV5BBKQ5", @api_secret_key="3u3PYtyHdlmtlfQZNrMyDP2kYOIzMLjI7Lohyv8E">
+
+
+RECENT TRADING SIGNALS:
+-------------------------
+No trading signals in last 24 hours
+
+
+RECENT ORDERS:
+---------------
+No recent orders found
+
+
+PERFORMANCE SUMMARY:
+--------------------
+Total Trades: 0
+Winning Trades: 0
+Losing Trades: 0
+Win Rate: 0%
+Total Return: $0
+Return Percentage: -0.27%
+
+
+SYSTEM INFORMATION:
+--------------------
+Bot Status: RUNNING
+Tracked Symbols: TSLA, GOOG, NVDA
+Rails Environment: development
+Alpaca Endpoint: paper-api.alpaca.markets
+
+
+FOR CLIENT VERIFICATION:
+-------------------------
+This log contains real market data and timestamps that can be verified against live market feeds.
+All trades shown are simulated (paper trading) but use real market prices and timing.
+You can compare the timestamps and prices against your live trading platform.
+
+Key verification points:
+1. Timestamps are in UTC timezone
+2. Market data prices should match live feeds within normal spread ranges
+3. EMA calculations can be verified using standard EMA formulas
+4. Signal timing shows when crossovers were detected
+
+Log generated at: 2025-06-16 08:20:21 UTC

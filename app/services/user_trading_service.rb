@@ -18,11 +18,11 @@ class UserTradingService
     # Check if we already have an open position for this symbol
     return false if Position.active.for_symbol(@symbol).for_user(@user).exists?
     
-    # Use the TradingBotService with user-specific settings
-    result = @trading_bot_service.run
+    # Use the TradingBotService with user-specific settings (synchronous execution)
+    result = @trading_bot_service.run(async: false)
     
     if result
-      Rails.logger.info "UserTradingService: Trade executed for #{@user.email} on #{@symbol} using settings: profit=#{@settings.profit_percentage}%, loss=#{@settings.loss_percentage}%, confirmation_bars=#{@settings.confirmation_bars}"
+      Rails.logger.info "UserTradingService: Trading signal processed for #{@user.email} on #{@symbol} using settings: profit=#{@settings.profit_percentage}%, loss=#{@settings.loss_percentage}%, confirmation_bars=#{@settings.confirmation_bars}"
     end
     
     result

@@ -29,21 +29,12 @@
       
       <!-- Timeframe Selector -->
       <div class="inline-flex shadow-sm rounded-md">
-        <!-- Test Button -->
-        <button 
-          type="button" 
-          data-action="click->chart#testButtonClick" 
-          class="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 border border-yellow-300 rounded-l-md mr-2"
-        >
-          TEST
-        </button>
-        
-        <% %w[5m 15m 1h 1d].each_with_index do |tf, index| %>
+        <% %w[1m 2m 5m 15m 1h].each_with_index do |tf, index| %>
           <% is_active = tf == (@timeframe || '5m') %>
           <% button_classes = "px-3 py-1.5 text-xs font-medium border border-gray-300 hover:bg-gray-50 focus:z-10 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" %>
           <% if index == 0 %>
             <% button_classes += " rounded-l-md" %>
-          <% elsif index == 3 %>
+          <% elsif index == 4 %>
             <% button_classes += " rounded-r-md" %>
           <% else %>
             <% button_classes += " border-t border-b" %>

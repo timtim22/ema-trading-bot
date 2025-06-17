@@ -20,6 +20,7 @@ class ActivityLog < ApplicationRecord
     position_close
     market_update
     system
+    trade
   ].freeze
   
   # Log levels for severity
@@ -71,6 +72,18 @@ class ActivityLog < ApplicationRecord
       symbol: symbol,
       user: user,
       details: details.merge(order_type: order_type, amount: amount, success: success),
+      occurred_at: Time.current
+    )
+  end
+  
+  def self.log_trade(symbol, order_type, price, user: nil, details: {})
+    create!(
+      event_type: 'trade',
+      level: 'info',
+      message: "#{order_type.upcase} trade executed for #{symbol} at $#{price}",
+      symbol: symbol,
+      user: user,
+      details: details.merge(order_type: order_type, price: price),
       occurred_at: Time.current
     )
   end

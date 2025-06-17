@@ -27,6 +27,7 @@ class Position < ApplicationRecord
   scope :recent_first, -> { order(created_at: :desc) }
   scope :user_scope, ->(user) { user.present? ? where(user: user) : all }
   scope :for_user, ->(user) { where(user: user) }
+  scope :unfilled_after_timeout, -> { where(status: 'pending').where('entry_time < ?', 2.minutes.ago) }
   
   # Callbacks
   before_save :calculate_profit_loss, if: :calculating_profit_loss?
@@ -118,6 +119,10 @@ class Position < ApplicationRecord
   def shares_quantity
     return 0 unless amount.present? && entry_price.present?
     (amount / entry_price).round(4)
+  end
+  
+  def completed?
+    !['open', 'pending'].include?(status)
   end
   
   private

@@ -14,7 +14,7 @@ namespace :trading_bot do
       puts "Processing symbol: #{symbol}"
       bot = TradingBotService.new(symbol, timeframe, default_user)
       
-      if bot.run
+      if bot.run(async: false)  # Use synchronous execution for rake tasks
         puts "Trading bot completed successfully for #{symbol}."
       else
         puts "Trading bot encountered an error for #{symbol}: #{bot.last_error}"

@@ -46,14 +46,13 @@ class EmaCalculatorService
       result[:values][period] = []
     end
     
-    # Calculate EMA series for each window starting from the maximum period
-    (max_period..prices.length).each do |i|
-      window = prices[0...i]
-      
-      # Calculate EMA for each period for this window
-      periods.each do |period|
+    # Calculate EMA series for each period independently
+    periods.each do |period|
+      # Start calculating as soon as we have enough data for this period
+      (period..prices.length).each do |i|
+        window = prices[0...i]
         ema_value = calculate_ema(window, period)
-        result[:values][period] << ema_value
+        result[:values][period] << ema_value if ema_value
       end
     end
     
@@ -125,7 +124,8 @@ class EmaCalculatorService
   
   # Check if there's a confirmed crossover with additional confirmation from EMA-22
   # - 3 consecutive bars with EMA-5 > EMA-8
-  # - 3 consecutive bars with EMA-8 > EMA-22
+  # - 3 consecutive bars with EMA-8 > EMA-22 (if EMA-22 provided)
+  # - The bar immediately before the 3-bar confirmation was EMA-5 <= EMA-8 (actual crossover)
   #
   # @param ema5_values [Array<Float>] array of recent EMA-5 values (oldest first)
   # @param ema8_values [Array<Float>] array of recent EMA-8 values (oldest first)
@@ -134,7 +134,7 @@ class EmaCalculatorService
   def self.confirmed_crossover?(ema5_values, ema8_values, ema22_values = nil)
     return false if ema5_values.length < 3 || ema8_values.length < 3
     
-    # Check if the last 3 values show EMA-5 > EMA-8
+    # Check if the last 3 values show EMA-5 > EMA-8 (3-bar confirmation)
     3.times do |i|
       return false unless ema5_values[-(i+1)] > ema8_values[-(i+1)]
     end
@@ -146,15 +146,18 @@ class EmaCalculatorService
       end
     end
     
-    # Also check if there was a crossover before this (EMA-5 was below EMA-8)
-    # This ensures we're catching an actual crossover, not just a continuation
+    # Check if there was a crossover before the 3-bar confirmation
+    # We need to check the bar immediately before the 3-bar confirmation period
+    # The 3-bar confirmation covers indices [-3, -2, -1], so we check index -4
     if ema5_values.length >= 4 && ema8_values.length >= 4
-      fourth_last_condition = ema5_values[-4] <= ema8_values[-4]
-      return fourth_last_condition
+      # The bar before the 3-bar confirmation should show EMA-5 <= EMA-8
+      pre_confirmation_ema5 = ema5_values[-4]
+      pre_confirmation_ema8 = ema8_values[-4]
+      return pre_confirmation_ema5 <= pre_confirmation_ema8
     end
     
-    # If we don't have enough history to check before the confirmation,
-    # just return true based on the 3-bar check
+    # If we don't have enough history to verify the actual crossover,
+    # return true based on the 3-bar check (this covers the minimum case)
     true
   end
 end 

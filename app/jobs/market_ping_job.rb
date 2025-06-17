@@ -398,10 +398,34 @@ class MarketPingJob < ApplicationJob
             timestamp: Time.current.to_i,
             user_id: user.id
           })
+          
+          # NEW: Execute trade when BUY signal is detected
+          if signal.signal_type == 'buy'
+            # Check if user already has an open position for this symbol
+            existing_position = Position.active.for_symbol(symbol).for_user(user).first
+            
+            if existing_position
+              Rails.logger.info "MarketPingJob: User #{user.id} already has open position #{existing_position.id} for #{symbol}, skipping trade execution"
+            else
+              # Execute trade using UserTradingService
+              user_trading_service = UserTradingService.new(user, symbol)
+              
+              if user_trading_service.should_trade?
+                Rails.logger.info "MarketPingJob: Executing BUY trade for user #{user.id} on #{symbol} at $#{current_price}"
+                
+                # Use ExecuteTradeJob for asynchronous execution
+                ExecuteTradeJob.perform_later(symbol, user.id, ENV.fetch("TRADE_AMOUNT", "1000").to_f)
+                
+                Rails.logger.info "MarketPingJob: Enqueued ExecuteTradeJob for #{symbol} (user: #{user.id})"
+              else
+                Rails.logger.info "MarketPingJob: User #{user.id} should not trade #{symbol} - skipping execution"
+              end
+            end
+          end
         end
       end
       
-      # Store current EMAs for next comparison
+      # Store current EMAs for next comparison (outside the User.find_each loop)
       store_current_emas(symbol, current_emas)
       
     rescue => e

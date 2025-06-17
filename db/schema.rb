@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_29_080201) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_30_100609) do
   create_table "activity_logs", force: :cascade do |t|
     t.string "event_type", null: false
     t.string "level", null: false
@@ -92,6 +92,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_29_080201) do
     t.index ["stop_loss"], name: "index_positions_on_stop_loss"
     t.index ["symbol"], name: "index_positions_on_symbol"
     t.index ["take_profit"], name: "index_positions_on_take_profit"
+    t.index ["user_id", "symbol", "status"], name: "index_positions_on_user_symbol_active_status", unique: true, where: "status IN ('open', 'pending')"
     t.index ["user_id"], name: "index_positions_on_user_id"
   end
 
@@ -124,6 +125,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_29_080201) do
     t.index ["user_id"], name: "index_trading_signals_on_user_id"
   end
 
+  create_table "unfilled_order_alerts", force: :cascade do |t|
+    t.integer "position_id", null: false
+    t.string "order_id"
+    t.integer "timeout_duration"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["position_id"], name: "index_unfilled_order_alerts_on_position_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -142,4 +152,5 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_29_080201) do
   add_foreign_key "positions", "users"
   add_foreign_key "tracked_symbols", "users"
   add_foreign_key "trading_signals", "users"
+  add_foreign_key "unfilled_order_alerts", "positions"
 end

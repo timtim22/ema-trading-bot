@@ -1,0 +1,48 @@
+
+EMA TRADING BOT - PAPER TRADING DEMONSTRATION REPORT
+===================================================
+Generated: 2025-06-15 09:45:35 UTC
+
+STRATEGY OVERVIEW:
+-----------------
+• EMA 5-8 Crossover Strategy
+• $1,000 per trade position sizing
+• 1% stop-loss and take-profit levels
+• 3-bar confirmation to reduce false signals
+• Fully automated execution
+
+PAPER TRADING RESULTS:
+---------------------
+Portfolio Value: $99673.38
+Cash Balance: $
+
+Total Trades: 0
+Winning Trades: 0
+Losing Trades: 
+Win Rate: 0%
+
+Total Return: $
+Return Percentage: -0.33%
+
+CURRENT POSITIONS:
+-----------------
+AAPL: 24.055707409 shares (P/L: $-274.25573)
+TSLA: 2.913044744 shares (P/L: $-52.347414)
+
+RISK MANAGEMENT:
+---------------
+• Maximum risk per trade: 1% of position value
+• Automatic stop-loss orders
+• Position sizing based on available capital
+• Paper trading eliminates financial risk during testing
+
+NEXT STEPS:
+----------
+1. Continue paper trading to gather more performance data
+2. Monitor strategy performance across different market conditions
+3. Fine-tune parameters if needed
+4. Transition to live trading when confident in results
+
+NOTE: This is simulated trading using paper money. No real funds are at risk.
+All market data and order executions are handled through Alpaca's paper trading environment.
+

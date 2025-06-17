@@ -1,0 +1,76 @@
+EMA TRADING BOT - CLIENT VERIFICATION LOG
+==================================================
+Generated: 2025-06-17 06:35:30 UTC
+Trading Mode: Paper Trading (SIMULATION)
+Market Data: REAL (from Alpaca API)
+
+VERIFICATION INSTRUCTIONS FOR CLIENT:
+----------------------------------------
+Compare these timestamps and prices against your live trading platform:
+• All timestamps are in UTC
+• Prices should match live market data within normal spread ranges
+• Bot decisions are based on EMA crossover signals
+• All trades are SIMULATED (no real money)
+
+PAPER TRADING ACCOUNT:
+-------------------------
+Account ID: ba6d854f-4157-4c15-a3b3-ff41ea296b88
+Portfolio Value: $99731.89
+Cash Balance: $193731.88
+Timestamp: 2025-06-17 06:35:31 UTC
+
+CURRENT PAPER POSITIONS:
+-------------------------
+Symbol: AAPL
+  Quantity: 24.055707409 shares
+  Average Cost: $
+  Unrealized P/L: $-226.865986
+  Timestamp: 2025-06-17 06:35:32 UTC
+
+Symbol: TSLA
+  Quantity: 2.913044744 shares
+  Average Cost: $
+  Unrealized P/L: $-41.219583
+  Timestamp: 2025-06-17 06:35:32 UTC
+
+REAL-TIME MARKET DATA VERIFICATION:
+-----------------------------------
+Compare these prices with your live trading platform at the timestamps shown:
+
+TSLA @ 2025-06-17 06:35:32 UTC:
+  Market data temporarily unavailable (market may be closed)
+
+AAPL @ 2025-06-17 06:35:33 UTC:
+  Market data temporarily unavailable (market may be closed)
+
+NVDA @ 2025-06-17 06:35:34 UTC:
+  Market data temporarily unavailable (market may be closed)
+
+BOT ACTIVITY LOG:
+--------------------
+No recent EMA calculations (bot may need to run during market hours)
+
+RECENT SIGNALS: None in last 24 hours
+
+PERFORMANCE SUMMARY:
+--------------------
+Total Trades: 0
+Win Rate: 0%
+Total Return: -0.27%
+Return in Dollars: $0
+
+CLIENT VERIFICATION CHECKLIST:
+------------------------------
+□ Compare timestamps with your trading platform
+□ Verify market prices match within normal spreads
+□ Check that EMA calculations follow standard formulas
+□ Confirm signal timing aligns with market movements
+□ Review that risk management rules are being followed
+
+NOTES:
+• This is PAPER TRADING - no real money involved
+• Market data is REAL and current
+• Bot decisions are based on actual EMA crossovers
+• Ready to switch to live trading when approved
+
+Log verified at: 2025-06-17 06:35:36 UTC

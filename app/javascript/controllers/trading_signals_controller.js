@@ -175,8 +175,12 @@ export default class extends Controller {
     const dotColor = signal.signal_type === 'buy' ? 'bg-green-400' : 'bg-red-400'
     const textColor = signal.signal_type === 'buy' ? 'text-green-600' : 'text-red-600'
     
+    // Format timestamp to match server-side formatting (MM/DD HH:MM)
+    const timestamp = new Date(signal.timestamp * 1000)
+    const formatted_date_time = `${(timestamp.getMonth() + 1).toString().padStart(2, '0')}/${timestamp.getDate().toString().padStart(2, '0')} ${timestamp.getHours().toString().padStart(2, '0')}:${timestamp.getMinutes().toString().padStart(2, '0')}`
+    
     return `
-      <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">${signal.formatted_time}</td>
+      <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">${formatted_date_time}</td>
       <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${signal.symbol}</td>
       <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm">
         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${signal.badge_class}">
