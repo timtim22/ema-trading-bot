@@ -1,15 +1,2076 @@
-<h1>EMA Trading Bot</h1>
-<p>Welcome to the EMA Trading Bot application!</p>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  
+  :root {
+    --primary-dark: #0a0a0a;
+    --secondary-dark: #1a1a1a;
+    --accent-green: #00ff88;
+    --accent-blue: #00d4ff;
+    --text-light: #ffffff;
+    --text-muted: #888888;
+  }
 
-<% if user_signed_in? %>
-  <p>You are logged in as: <strong><%= current_user.email %></strong></p>
-  <p>
-    <%= link_to "Edit Profile", edit_user_registration_path %> |
-    <%= button_to "Logout", destroy_user_session_path, method: :delete %>
-  </p>
-<% else %>
-  <p>
-    <%= link_to "Sign Up", new_user_registration_path %> |
-    <%= link_to "Login", new_user_session_path %>
-  </p>
-<% end %>
+  /* Only reset body, html and main - not affecting navbar */
+  html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Override Tailwind max-width constraints for full-width layout */
+  .max-w-7xl {
+    max-width: none !important;
+  }
+
+  /* Override Tailwind padding classes that cause gaps */
+  .py-4 {
+    padding-block: 0 !important;
+  }
+
+  @media (min-width: 40rem) {
+    .sm\:py-6 {
+      padding-block: 0 !important;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .lg\:py-8 {
+      padding-block: 0 !important;
+    }
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--primary-dark);
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+    cursor: none; /* Hide default cursor */
+  }
+
+  /* Target only main content area - remove any gaps */
+  main {
+    margin: 0;
+    padding: 0;
+    display: block;
+  }
+
+  /* Ensure no gaps around page content */
+  .container-fluid,
+  .container {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Reset only for home page sections */
+  .hero-container,
+  .content-section,
+  .footer-section {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  .hero-container * {
+    box-sizing: border-box;
+  }
+
+  .hero-container {
+    width: 100vw;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0f1419 100%);
+    position: relative;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    margin-top: 0;
+    top: 0;
+  }
+
+  .floating-particles {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 1;
+  }
+
+  .particle {
+    position: absolute;
+    background: var(--accent-green);
+    border-radius: 50%;
+    opacity: 0.1;
+    animation: float 20s infinite linear;
+  }
+
+  .particle:nth-child(odd) {
+    background: var(--accent-blue);
+    animation-duration: 25s;
+  }
+
+  @keyframes float {
+    0% {
+      transform: translateY(100vh) rotate(0deg);
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.1;
+    }
+    90% {
+      opacity: 0.1;
+    }
+    100% {
+      transform: translateY(-100px) rotate(360deg);
+      opacity: 0;
+    }
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 10;
+    padding: 100px 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .animate-on-scroll {
+    opacity: 0;
+    transform: translateY(50px);
+    transition: all 0.8s ease-out;
+  }
+
+  .animate-on-scroll.in-view {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .hero-title {
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-blue) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .hero-title:hover {
+    transform: translateY(-5px);
+    filter: drop-shadow(0 10px 20px rgba(0, 255, 136, 0.3));
+    background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-green) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-subtitle {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    margin-bottom: 3rem;
+    max-width: 600px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .hero-subtitle:hover {
+    color: var(--text-light);
+    transform: translateX(10px);
+  }
+
+  .cta-button {
+    background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-blue) 100%);
+    border: none;
+    padding: 18px 40px;
+    border-radius: 50px;
+    color: var(--primary-dark);
+    font-weight: 600;
+    font-size: 1.1rem;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cta-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 20px 40px rgba(0, 255, 136, 0.3);
+    color: var(--primary-dark);
+  }
+
+  .cta-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+
+  .cta-button:hover::before {
+    left: 100%;
+  }
+
+  .trading-visual {
+    position: relative;
+    height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .chart-container {
+    width: 300px;
+    height: 200px;
+    position: relative;
+    background: rgba(26, 26, 26, 0.8);
+    border-radius: 15px;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 255, 136, 0.2);
+    padding: 20px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .chart-container:hover {
+    transform: scale(1.05) rotateY(5deg);
+    border-color: var(--accent-green);
+    box-shadow: 0 20px 40px rgba(0, 255, 136, 0.2);
+  }
+
+  .chart-container:hover .candlestick {
+    animation-duration: 0.5s;
+  }
+
+  .chart-container:hover .ema-line {
+    animation-duration: 1s;
+  }
+
+  .chart-line {
+    position: absolute;
+    bottom: 40px;
+    left: 20px;
+    right: 20px;
+    height: 2px;
+    background: var(--accent-green);
+    transform-origin: left;
+    animation: drawLine 3s ease-in-out infinite;
+  }
+
+  /* Enhanced Chart Visualizations */
+  .chart-grid {
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    right: 20px;
+    bottom: 30px;
+    opacity: 0.2;
+  }
+
+  .chart-grid::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      linear-gradient(to right, rgba(0, 255, 136, 0.1) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 255, 136, 0.1) 1px, transparent 1px);
+    background-size: 30px 25px;
+    animation: gridPulse 4s ease-in-out infinite;
+  }
+
+  @keyframes gridPulse {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 0.4; }
+  }
+
+  .candlestick {
+    position: absolute;
+    width: 8px;
+    background: var(--accent-green);
+    border-radius: 2px;
+    animation: candleGrow 2s ease-out infinite;
+  }
+
+  .candlestick.red {
+    background: #ff4757;
+  }
+
+  .candlestick:nth-child(1) { left: 30px; height: 25px; bottom: 40px; animation-delay: 0.1s; }
+  .candlestick:nth-child(2) { left: 50px; height: 35px; bottom: 35px; animation-delay: 0.2s; }
+  .candlestick:nth-child(3) { left: 70px; height: 20px; bottom: 45px; animation-delay: 0.3s; }
+  .candlestick:nth-child(4) { left: 90px; height: 40px; bottom: 30px; animation-delay: 0.4s; }
+  .candlestick:nth-child(5) { left: 110px; height: 30px; bottom: 40px; animation-delay: 0.5s; }
+  .candlestick:nth-child(6) { left: 130px; height: 45px; bottom: 25px; animation-delay: 0.6s; }
+  .candlestick:nth-child(7) { left: 150px; height: 25px; bottom: 45px; animation-delay: 0.7s; }
+  .candlestick:nth-child(8) { left: 170px; height: 38px; bottom: 32px; animation-delay: 0.8s; }
+  .candlestick:nth-child(9) { left: 190px; height: 28px; bottom: 42px; animation-delay: 0.9s; }
+  .candlestick:nth-child(10) { left: 210px; height: 50px; bottom: 20px; animation-delay: 1s; }
+
+  @keyframes candleGrow {
+    0% { 
+      transform: scaleY(0);
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      transform: scaleY(1);
+      opacity: 0.9;
+    }
+  }
+
+  .ema-line {
+    position: absolute;
+    bottom: 40px;
+    left: 20px;
+    right: 20px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-green));
+    border-radius: 1px;
+    animation: drawEMA 4s ease-in-out infinite;
+    z-index: 10;
+  }
+
+  .ema-line::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-green));
+    border-radius: 2px;
+    filter: blur(3px);
+    opacity: 0.5;
+  }
+
+  @keyframes drawEMA {
+    0% { 
+      clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
+    }
+    100% { 
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    }
+  }
+
+  .chart-label {
+    position: absolute;
+    font-size: 10px;
+    color: var(--accent-green);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .chart-label.price {
+    top: 10px;
+    right: 20px;
+    animation: priceFlicker 2s ease-in-out infinite;
+  }
+
+  .chart-label.volume {
+    bottom: 10px;
+    left: 20px;
+    color: var(--accent-blue);
+  }
+
+  @keyframes priceFlicker {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; transform: scale(1.05); }
+  }
+
+  /* Enhanced Floating Elements */
+  .floating-data {
+    position: absolute;
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 212, 255, 0.1));
+    border: 1px solid rgba(0, 255, 136, 0.3);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--accent-green);
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+    animation: floatData 6s ease-in-out infinite;
+  }
+
+  .data-1 { top: 15%; right: 15%; animation-delay: 0s; }
+  .data-2 { bottom: 25%; left: 15%; animation-delay: 2s; }
+  .data-3 { top: 60%; right: 25%; animation-delay: 4s; }
+
+  @keyframes floatData {
+    0%, 100% { 
+      transform: translateY(0) scale(1);
+      opacity: 0.8;
+    }
+    33% { 
+      transform: translateY(-15px) scale(1.05);
+      opacity: 1;
+    }
+    66% { 
+      transform: translateY(8px) scale(0.95);
+      opacity: 0.9;
+    }
+  }
+
+  /* Glowing Particles */
+  .glow-particle {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--accent-green);
+    animation: glowMove 8s linear infinite;
+  }
+
+  .glow-particle:nth-child(odd) {
+    background: var(--accent-blue);
+    box-shadow: 0 0 10px var(--accent-blue);
+    animation-duration: 12s;
+  }
+
+  @keyframes glowMove {
+    0% {
+      transform: translate(0, 0) scale(0);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      transform: translate(200px, -100px) scale(0);
+      opacity: 0;
+    }
+  }
+
+  /* Pulse Animation for CTA Button */
+  .cta-button {
+    background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-blue) 100%);
+    border: none;
+    padding: 18px 40px;
+    border-radius: 50px;
+    color: var(--primary-dark);
+    font-weight: 600;
+    font-size: 1.1rem;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    animation: ctaPulse 3s ease-in-out infinite;
+  }
+
+  @keyframes ctaPulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 20px rgba(0, 255, 136, 0);
+    }
+  }
+
+  .cta-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 20px 40px rgba(0, 255, 136, 0.3);
+    color: var(--primary-dark);
+    animation: none;
+  }
+
+  .cta-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+
+  .cta-button:hover::before {
+    left: 100%;
+  }
+
+  /* Background Matrix Effect */
+  .matrix-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 0;
+  }
+
+  .matrix-column {
+    position: absolute;
+    top: -100%;
+    color: var(--accent-green);
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 14px;
+    opacity: 0.1;
+    animation: matrixRain linear infinite;
+  }
+
+  @keyframes matrixRain {
+    0% {
+      top: -100%;
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.1;
+    }
+    90% {
+      opacity: 0.1;
+    }
+    100% {
+      top: 100%;
+      opacity: 0;
+    }
+  }
+
+  @keyframes drawLine {
+    0%, 100% { transform: scaleX(0); }
+    50% { transform: scaleX(1); }
+  }
+
+  .floating-icons {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-dark);
+    font-size: 20px;
+    animation: floatIcon 6s ease-in-out infinite;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .floating-icons:hover {
+    transform: scale(1.3) rotate(15deg);
+    box-shadow: 0 15px 30px rgba(0, 255, 136, 0.4);
+    z-index: 100;
+  }
+
+  .icon-1 { top: 20%; left: 20%; animation-delay: 0s; }
+  .icon-2 { top: 70%; right: 30%; animation-delay: 2s; }
+  .icon-3 { bottom: 20%; left: 40%; animation-delay: 4s; }
+
+  @keyframes floatIcon {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    33% { transform: translateY(-20px) rotate(5deg); }
+    66% { transform: translateY(10px) rotate(-3deg); }
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    margin: 3rem 0 2rem 0;
+  }
+
+  .feature-card {
+    background: rgba(26, 26, 26, 0.8);
+    border-radius: 20px;
+    padding: 2.5rem;
+    text-align: center;
+    border: 1px solid rgba(0, 255, 136, 0.1);
+    backdrop-filter: blur(20px);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-15px) scale(1.02);
+    border-color: var(--accent-green);
+    box-shadow: 0 30px 60px rgba(0, 255, 136, 0.2);
+  }
+
+  .feature-card:hover .feature-icon {
+    transform: scale(1.2) rotate(10deg);
+    animation: iconBounce 0.6s ease-in-out;
+  }
+
+  @keyframes iconBounce {
+    0%, 100% { transform: scale(1.2) rotate(10deg); }
+    50% { transform: scale(1.4) rotate(-5deg); }
+  }
+
+  .feature-icon {
+    font-size: 3rem;
+    background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1.5rem;
+  }
+
+  .feature-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-light);
+  }
+
+  .feature-description {
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  .section-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-blue) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .section-subtitle {
+    text-align: center;
+    color: var(--text-muted);
+    margin-bottom: 4rem;
+    font-size: 1.1rem;
+  }
+
+  .stats-container {
+    background: rgba(26, 26, 26, 0.8);
+    border-radius: 20px;
+    padding: 3rem;
+    margin: 2rem 0 1rem 0;
+    border: 1px solid rgba(0, 255, 136, 0.2);
+    backdrop-filter: blur(20px);
+  }
+
+  .stat-item {
+    text-align: center;
+    padding: 1rem;
+  }
+
+  .stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: block;
+  }
+
+  .stat-label {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .content-section {
+    width: 100vw;
+    background: var(--primary-dark);
+    padding: 2rem 0 1rem 0;
+    margin: 0;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    position: relative;
+  }
+
+  .content-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    width: 100%;
+  }
+
+  .footer-section {
+    width: 100vw;
+    background: rgba(26, 26, 26, 0.95);
+    padding: 2rem 0;
+    border-top: 1px solid rgba(0, 255, 136, 0.1);
+    margin: 0;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    position: relative;
+  }
+
+  @media (max-width: 768px) {
+    .hero-content {
+      padding: 50px 1rem;
+    }
+    
+    .trading-visual {
+      height: 300px;
+      margin-top: 3rem;
+    }
+    
+    .chart-container {
+      width: 250px;
+      height: 150px;
+    }
+    
+    .features-grid {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .content-container {
+      padding: 0 1rem;
+    }
+  }
+
+  /* Custom Cursor Effects */
+  .custom-cursor {
+    position: fixed;
+    width: 20px;
+    height: 20px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    mix-blend-mode: difference;
+    transition: all 0.1s ease;
+  }
+
+  .custom-cursor::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--accent-green);
+    border-radius: 50%;
+    opacity: 0.3;
+    animation: cursorPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes cursorPulse {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 0.3;
+    }
+    50% {
+      transform: scale(1.2);
+      opacity: 0.1;
+    }
+  }
+
+  .custom-cursor.hover {
+    transform: scale(1.5);
+    background: var(--accent-blue);
+    mix-blend-mode: screen;
+  }
+
+  .custom-cursor.click {
+    transform: scale(0.8);
+    background: #ff4757;
+  }
+
+  /* Mouse Trail Effect */
+  .mouse-trail {
+    position: fixed;
+    width: 6px;
+    height: 6px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+  }
+
+  /* Click Ripple Effect */
+  .click-ripple {
+    position: fixed;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 255, 136, 0.4) 0%, transparent 70%);
+    transform: scale(0);
+    animation: rippleEffect 0.6s ease-out;
+    pointer-events: none;
+    z-index: 9997;
+  }
+
+  @keyframes rippleEffect {
+    0% {
+      transform: scale(0);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+
+  /* Glow Effect on Hover */
+  .glow-on-hover {
+    position: relative;
+    transition: all 0.3s ease;
+  }
+
+  .glow-on-hover::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at center, rgba(0, 255, 136, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  .glow-on-hover:hover::after {
+    opacity: 1;
+  }
+
+  /* Text Selection Effects */
+  ::selection {
+    background: var(--accent-green);
+    color: var(--primary-dark);
+  }
+
+  ::-moz-selection {
+    background: var(--accent-green);
+    color: var(--primary-dark);
+  }
+
+  /* Scrollbar Styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--primary-dark);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--accent-green);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-blue);
+  }
+
+  /* Parallax Mouse Movement */
+  .parallax-element {
+    transition: transform 0.1s ease;
+  }
+
+  /* Floating Geometric Shapes */
+  .geometric-shape {
+    position: absolute;
+    pointer-events: none;
+    z-index: 2;
+    animation: geometricFloat 15s linear infinite;
+  }
+
+  .triangle {
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-bottom: 25px solid rgba(0, 255, 136, 0.1);
+  }
+
+  .hexagon {
+    width: 20px;
+    height: 35px;
+    background: rgba(0, 212, 255, 0.1);
+    position: relative;
+    margin: 17px 0;
+  }
+
+  .hexagon:before,
+  .hexagon:after {
+    content: "";
+    position: absolute;
+    width: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+  }
+
+  .hexagon:before {
+    bottom: 100%;
+    border-bottom: 17px solid rgba(0, 212, 255, 0.1);
+  }
+
+  .hexagon:after {
+    top: 100%;
+    border-top: 17px solid rgba(0, 212, 255, 0.1);
+  }
+
+  .diamond {
+    width: 20px;
+    height: 20px;
+    background: rgba(0, 255, 136, 0.1);
+    transform: rotate(45deg);
+  }
+
+  @keyframes geometricFloat {
+    0% {
+      transform: translateY(100vh) rotate(0deg);
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.3;
+    }
+    90% {
+      opacity: 0.3;
+    }
+    100% {
+      transform: translateY(-100px) rotate(360deg);
+      opacity: 0;
+    }
+  }
+
+  /* Animated Gradient Background Overlay */
+  .gradient-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, 
+      rgba(0, 255, 136, 0.05) 0%, 
+      rgba(0, 212, 255, 0.05) 25%, 
+      rgba(255, 71, 87, 0.05) 50%, 
+      rgba(0, 255, 136, 0.05) 75%, 
+      rgba(0, 212, 255, 0.05) 100%);
+    background-size: 400% 400%;
+    animation: gradientShift 8s ease-in-out infinite;
+    z-index: 1;
+  }
+
+  @keyframes gradientShift {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  /* Typewriter Effect */
+  .typewriter-text {
+    overflow: hidden;
+    border-right: 3px solid var(--accent-green);
+    white-space: nowrap;
+    animation: typewriter 3s steps(25, end) 1s both, blink-caret 0.75s step-end infinite 1s;
+    width: 0;
+    display: inline-block;
+    max-width: fit-content;
+  }
+
+  @keyframes typewriter {
+    from { width: 0; }
+    to { width: 100%; }
+  }
+
+  @keyframes blink-caret {
+    from, to { border-color: transparent; }
+    50% { border-color: var(--accent-green); }
+  }
+
+  /* Sound Wave Visualization */
+  .sound-wave {
+    display: flex;
+    align-items: center;
+    height: 40px;
+    gap: 3px;
+  }
+
+  .wave-bar {
+    width: 4px;
+    background: linear-gradient(to top, var(--accent-green), var(--accent-blue));
+    border-radius: 2px;
+    animation: waveAnimation 1.5s ease-in-out infinite;
+  }
+
+  .wave-bar:nth-child(1) { animation-delay: 0s; height: 10px; }
+  .wave-bar:nth-child(2) { animation-delay: 0.1s; height: 25px; }
+  .wave-bar:nth-child(3) { animation-delay: 0.2s; height: 35px; }
+  .wave-bar:nth-child(4) { animation-delay: 0.3s; height: 20px; }
+  .wave-bar:nth-child(5) { animation-delay: 0.4s; height: 30px; }
+  .wave-bar:nth-child(6) { animation-delay: 0.5s; height: 15px; }
+  .wave-bar:nth-child(7) { animation-delay: 0.6s; height: 25px; }
+  .wave-bar:nth-child(8) { animation-delay: 0.7s; height: 35px; }
+
+  @keyframes waveAnimation {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(2); }
+  }
+
+  /* Holographic Text Effect */
+  .holographic {
+    background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-blue) 50%, var(--accent-green) 100%);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: hologram 4s ease-in-out infinite;
+    position: relative;
+  }
+
+  .holographic::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%);
+    z-index: -1;
+    border-radius: 10px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .holographic:hover::before {
+    opacity: 1;
+  }
+
+  @keyframes hologram {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  /* Typewriter Effect */
+  .typewriter-text {
+    overflow: hidden;
+    border-right: 3px solid var(--accent-green);
+    white-space: nowrap;
+    animation: typewriter 3s steps(25, end) 1s both, blink-caret 0.75s step-end infinite 1s;
+    width: 0;
+    display: inline-block;
+    max-width: fit-content;
+  }
+
+  /* Particle Explosion Effect */
+  .particle-explosion {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9996;
+  }
+
+  .explosion-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    animation: explode 1s ease-out forwards;
+  }
+
+  @keyframes explode {
+    0% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0) translate(var(--dx), var(--dy));
+    }
+  }
+
+  /* DNA Helix Animation */
+  .dna-helix {
+    position: absolute;
+    width: 100px;
+    height: 200px;
+    right: 10%;
+    top: 20%;
+  }
+
+  .dna-strand {
+    position: absolute;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(to bottom, var(--accent-green), var(--accent-blue));
+    border-radius: 2px;
+    animation: dnaRotate 4s linear infinite;
+  }
+
+  .dna-strand:nth-child(1) { left: 20px; animation-delay: 0s; }
+  .dna-strand:nth-child(2) { right: 20px; animation-delay: 2s; }
+
+  .dna-connector {
+    position: absolute;
+    width: 60px;
+    height: 2px;
+    background: rgba(0, 255, 136, 0.3);
+    left: 20px;
+    animation: dnaConnect 2s ease-in-out infinite;
+  }
+
+  .dna-connector:nth-child(3) { top: 20px; animation-delay: 0s; }
+  .dna-connector:nth-child(4) { top: 60px; animation-delay: 0.5s; }
+  .dna-connector:nth-child(5) { top: 100px; animation-delay: 1s; }
+  .dna-connector:nth-child(6) { top: 140px; animation-delay: 1.5s; }
+
+  @keyframes dnaRotate {
+    0% { transform: rotateY(0deg); }
+    100% { transform: rotateY(360deg); }
+  }
+
+  @keyframes dnaConnect {
+    0%, 100% { opacity: 0.3; transform: scaleX(1); }
+    50% { opacity: 0.8; transform: scaleX(1.2); }
+  }
+
+  /* Neon Border Animation */
+  .neon-border {
+    position: relative;
+    border: 2px solid transparent;
+    background: linear-gradient(45deg, var(--primary-dark), var(--secondary-dark));
+    background-clip: padding-box;
+  }
+
+  .neon-border::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, var(--accent-green), var(--accent-blue), var(--accent-green));
+    background-size: 400% 400%;
+    border-radius: inherit;
+    z-index: -1;
+    animation: neonFlow 3s ease-in-out infinite;
+  }
+
+  @keyframes neonFlow {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  /* Radar Sweep Effect */
+  .radar-container {
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    left: 5%;
+    bottom: 10%;
+    border: 2px solid rgba(0, 255, 136, 0.3);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 255, 136, 0.05) 0%, transparent 70%);
+  }
+
+  .radar-sweep {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2px;
+    height: 70px;
+    background: linear-gradient(to top, var(--accent-green), transparent);
+    transform-origin: bottom center;
+    animation: radarSweep 3s linear infinite;
+  }
+
+  .radar-blip {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    animation: blipPulse 2s ease-in-out infinite;
+  }
+
+  .blip-1 { top: 30%; left: 40%; animation-delay: 0s; }
+  .blip-2 { top: 60%; right: 35%; animation-delay: 1s; }
+  .blip-3 { bottom: 25%; left: 60%; animation-delay: 2s; }
+
+  @keyframes radarSweep {
+    0% { transform: translateX(-50%) rotate(0deg); }
+    100% { transform: translateX(-50%) rotate(360deg); }
+  }
+
+  @keyframes blipPulse {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.5); }
+  }
+
+  /* Enhanced CTA Button with Particles */
+  .cta-button {
+    background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-blue) 100%);
+    border: none;
+    padding: 18px 40px;
+    border-radius: 50px;
+    color: var(--primary-dark);
+    font-weight: 600;
+    font-size: 1.1rem;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    animation: ctaPulse 3s ease-in-out infinite;
+  }
+
+  .cta-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+    transition: all 0.5s ease;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .cta-button:hover::after {
+    width: 200px;
+    height: 200px;
+  }
+
+  /* Floating Tech Icons */
+  .tech-icon {
+    position: absolute;
+    font-size: 24px;
+    color: rgba(0, 255, 136, 0.2);
+    animation: techFloat 10s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  .tech-icon:nth-child(odd) {
+    color: rgba(0, 212, 255, 0.2);
+    animation-duration: 12s;
+  }
+
+  @keyframes techFloat {
+    0%, 100% {
+      transform: translateY(0) rotate(0deg);
+      opacity: 0.2;
+    }
+    25% {
+      transform: translateY(-20px) rotate(90deg);
+      opacity: 0.4;
+    }
+    75% {
+      transform: translateY(20px) rotate(270deg);
+      opacity: 0.3;
+    }
+  }
+</style>
+
+<div class="hero-container">
+  <!-- Custom Cursor -->
+  <div class="custom-cursor"></div>
+  
+  <!-- Animated Gradient Background Overlay -->
+  <div class="gradient-overlay"></div>
+  
+  <!-- Floating Geometric Shapes -->
+  <div class="geometric-shape triangle" style="left: 10%; animation-delay: 0s;"></div>
+  <div class="geometric-shape hexagon" style="left: 30%; animation-delay: 3s;"></div>
+  <div class="geometric-shape diamond" style="left: 50%; animation-delay: 6s;"></div>
+  <div class="geometric-shape triangle" style="left: 70%; animation-delay: 9s;"></div>
+  <div class="geometric-shape hexagon" style="left: 90%; animation-delay: 12s;"></div>
+  <div class="geometric-shape diamond" style="left: 15%; animation-delay: 15s;"></div>
+  <div class="geometric-shape triangle" style="left: 85%; animation-delay: 18s;"></div>
+  
+  <!-- DNA Helix Animation -->
+  <div class="dna-helix">
+    <div class="dna-strand"></div>
+    <div class="dna-strand"></div>
+    <div class="dna-connector"></div>
+    <div class="dna-connector"></div>
+    <div class="dna-connector"></div>
+    <div class="dna-connector"></div>
+  </div>
+  
+  <!-- Radar System -->
+  <div class="radar-container">
+    <div class="radar-sweep"></div>
+    <div class="radar-blip blip-1"></div>
+    <div class="radar-blip blip-2"></div>
+    <div class="radar-blip blip-3"></div>
+  </div>
+  
+  <!-- Floating Tech Icons -->
+  <div class="tech-icon" style="left: 8%; top: 15%;">⚙️</div>
+  <div class="tech-icon" style="right: 12%; top: 25%;">🔧</div>
+  <div class="tech-icon" style="left: 25%; bottom: 30%;">💻</div>
+  <div class="tech-icon" style="right: 25%; bottom: 20%;">🖥️</div>
+  <div class="tech-icon" style="left: 45%; top: 10%;">📡</div>
+  <div class="tech-icon" style="right: 35%; top: 40%;">🔬</div>
+  <div class="tech-icon" style="left: 15%; top: 60%;">🛰️</div>
+  <div class="tech-icon" style="right: 20%; bottom: 40%;">⚡</div>
+  
+  <!-- Matrix Background Effect -->
+  <div class="matrix-bg">
+    <div class="matrix-column" style="left: 5%; animation-duration: 15s; animation-delay: 0s;">1010<br>1100<br>0110<br>1001</div>
+    <div class="matrix-column" style="left: 15%; animation-duration: 12s; animation-delay: 2s;">EMA<br>RSI<br>MACD<br>SMA</div>
+    <div class="matrix-column" style="left: 25%; animation-duration: 18s; animation-delay: 4s;">$BUY<br>$SELL<br>$HOLD<br>$WIN</div>
+    <div class="matrix-column" style="left: 35%; animation-duration: 14s; animation-delay: 1s;">📈<br>⚡<br>🎯<br>💎</div>
+    <div class="matrix-column" style="left: 45%; animation-duration: 16s; animation-delay: 3s;">AI<br>BOT<br>AUTO<br>GAIN</div>
+    <div class="matrix-column" style="left: 55%; animation-duration: 13s; animation-delay: 5s;">0101<br>1111<br>0010<br>1010</div>
+    <div class="matrix-column" style="left: 65%; animation-duration: 17s; animation-delay: 2s;">ALGO<br>TRADE<br>SMART<br>FAST</div>
+    <div class="matrix-column" style="left: 75%; animation-duration: 15s; animation-delay: 4s;">💰<br>📊<br>🚀<br>⭐</div>
+    <div class="matrix-column" style="left: 85%; animation-duration: 11s; animation-delay: 1s;">1001<br>0110<br>1100<br>0011</div>
+    <div class="matrix-column" style="left: 95%; animation-duration: 19s; animation-delay: 6s;">PROFIT<br>GROWTH<br>SUCCESS<br>TECH</div>
+  </div>
+
+  <div class="floating-particles">
+    <div class="particle" style="left: 10%; width: 4px; height: 4px; animation-delay: 0s;"></div>
+    <div class="particle" style="left: 20%; width: 6px; height: 6px; animation-delay: 2s;"></div>
+    <div class="particle" style="left: 30%; width: 3px; height: 3px; animation-delay: 4s;"></div>
+    <div class="particle" style="left: 40%; width: 5px; height: 5px; animation-delay: 6s;"></div>
+    <div class="particle" style="left: 50%; width: 4px; height: 4px; animation-delay: 8s;"></div>
+    <div class="particle" style="left: 60%; width: 7px; height: 7px; animation-delay: 10s;"></div>
+    <div class="particle" style="left: 70%; width: 3px; height: 3px; animation-delay: 12s;"></div>
+    <div class="particle" style="left: 80%; width: 5px; height: 5px; animation-delay: 14s;"></div>
+    <div class="particle" style="left: 90%; width: 4px; height: 4px; animation-delay: 16s;"></div>
+    <!-- Glowing Particles -->
+    <div class="glow-particle" style="left: 15%; top: 20%; animation-delay: 0s;"></div>
+    <div class="glow-particle" style="left: 45%; top: 60%; animation-delay: 3s;"></div>
+    <div class="glow-particle" style="left: 75%; top: 30%; animation-delay: 6s;"></div>
+    <div class="glow-particle" style="left: 25%; top: 80%; animation-delay: 9s;"></div>
+    <div class="glow-particle" style="left: 65%; top: 15%; animation-delay: 12s;"></div>
+  </div>
+
+  <div class="hero-content">
+    <div class="row align-items-center">
+      <div class="col-lg-6">
+        <div class="animate-on-scroll">
+          <h1 class="hero-title parallax-element glow-on-hover holographic">
+            Trade Smarter with<br>
+            <span style="font-weight: 300;">EMA Intelligence</span>
+          </h1>
+          <div style="margin-bottom: 0.5rem;">
+            <div class="typewriter-text hero-subtitle parallax-element" style="font-size: 1.1rem;">
+              AI-Powered Trading Revolution
+            </div>
+          </div>
+          <p class="hero-subtitle parallax-element" style="margin-top: 0.5rem;">
+            Harness the power of Exponential Moving Averages with AI-driven automation. 
+            Let advanced algorithms execute your trading strategies while you focus on what matters most.
+          </p>
+          <% if user_signed_in? %>
+            <a href="/dashboard" class="cta-button glow-on-hover neon-border">
+              Start Trading Now
+            </a>
+          <% else %>
+            <a href="/users/sign_in" class="cta-button glow-on-hover neon-border">
+              Start Trading Now
+            </a>
+          <% end %>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="trading-visual animate-on-scroll">
+          <div class="chart-container glow-on-hover parallax-element">
+            <!-- Chart Grid -->
+            <div class="chart-grid"></div>
+            
+            <!-- Chart Labels -->
+            <div class="chart-label price">$24,567.89</div>
+            <div class="chart-label volume">Vol: 2.4M</div>
+            
+            <!-- Candlesticks -->
+            <div class="candlestick"></div>
+            <div class="candlestick red"></div>
+            <div class="candlestick"></div>
+            <div class="candlestick"></div>
+            <div class="candlestick red"></div>
+            <div class="candlestick"></div>
+            <div class="candlestick red"></div>
+            <div class="candlestick"></div>
+            <div class="candlestick"></div>
+            <div class="candlestick"></div>
+            
+            <!-- EMA Line -->
+            <div class="ema-line"></div>
+            
+            <!-- Original Chart Line -->
+            <div class="chart-line"></div>
+          </div>
+          
+          <!-- Floating Data Points -->
+          <div class="floating-data data-1 glow-on-hover">+15.7%</div>
+          <div class="floating-data data-2 glow-on-hover">RSI: 68</div>
+          <div class="floating-data data-3 glow-on-hover">EMA Cross</div>
+          
+          <!-- Enhanced Floating Icons -->
+          <div class="floating-icons icon-1 parallax-element">📈</div>
+          <div class="floating-icons icon-2 parallax-element">⚡</div>
+          <div class="floating-icons icon-3 parallax-element">🎯</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="content-section">
+  <div class="content-container">
+    <!-- What We Do Section -->
+    <section class="animate-on-scroll">
+      <h2 class="section-title">What We Do</h2>
+      <p class="section-subtitle">
+        We transform complex market analysis into simple, profitable trading decisions
+      </p>
+      
+      <div class="features-grid">
+        <div class="feature-card animate-on-scroll glow-on-hover">
+          <div class="feature-icon">🤖</div>
+          <h3 class="feature-title">Automated EMA Trading</h3>
+          <p class="feature-description">
+            Our advanced algorithms analyze Exponential Moving Averages in real-time, 
+            executing trades with precision and speed that human traders can't match.
+          </p>
+        </div>
+        
+        <div class="feature-card animate-on-scroll glow-on-hover">
+          <div class="feature-icon">📊</div>
+          <h3 class="feature-title">Smart Market Analysis</h3>
+          <p class="feature-description">
+            Continuous monitoring of market trends using multiple EMA periods to identify 
+            optimal entry and exit points for maximum profitability.
+          </p>
+        </div>
+        
+        <div class="feature-card animate-on-scroll glow-on-hover">
+          <div class="feature-icon">🛡️</div>
+          <h3 class="feature-title">Risk Management</h3>
+          <p class="feature-description">
+            Built-in risk controls and stop-loss mechanisms protect your capital while 
+            allowing for strategic position sizing based on market volatility.
+          </p>
+        </div>
+        
+        <div class="feature-card animate-on-scroll glow-on-hover">
+          <div class="feature-icon">📱</div>
+          <h3 class="feature-title">Real-Time Notifications</h3>
+          <p class="feature-description">
+            Stay informed with instant alerts about trade executions, market opportunities, 
+            and important changes in your trading performance.
+          </p>
+        </div>
+        
+        <div class="feature-card animate-on-scroll glow-on-hover">
+          <div class="feature-icon">📈</div>
+          <h3 class="feature-title">Performance Analytics</h3>
+          <p class="feature-description">
+            Detailed insights into your trading performance with comprehensive reports, 
+            profit/loss analysis, and strategy optimization recommendations.
+          </p>
+        </div>
+        
+        <div class="feature-card animate-on-scroll glow-on-hover">
+          <div class="feature-icon">🔧</div>
+          <h3 class="feature-title">Custom Strategies</h3>
+          <p class="feature-description">
+            Tailor EMA parameters to match your trading style with customizable periods, 
+            signals, and risk tolerance settings for personalized results.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="animate-on-scroll">
+      <div class="stats-container">
+        <div class="row">
+          <div class="col-md-3 col-6">
+            <div class="stat-item">
+              <span class="stat-number" data-target="24">0</span>
+              <div class="stat-label">Hours Trading</div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="stat-item">
+              <span class="stat-number" data-target="99">0</span>
+              <div class="stat-label">Uptime %</div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="stat-item">
+              <span class="stat-number" data-target="1000">0</span>
+              <div class="stat-label">Trades/Day</div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="stat-item">
+              <span class="stat-number" data-target="5">0</span>
+              <div class="stat-label">Markets</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="footer-section">
+  <div class="content-container text-center">
+    <p style="color: var(--text-muted); margin: 0;">
+      &copy; <%= Time.current.year %> EMA Trading Bot - 
+      <a href="#" style="color: var(--accent-green); text-decoration: none;">Documentation</a> | 
+      <a href="#" style="color: var(--accent-green); text-decoration: none;">Support</a> | 
+      <a href="#" style="color: var(--accent-green); text-decoration: none;">API</a>
+    </p>
+  </div>
+</footer>
+
+<script>
+document.addEventListener('turbo:load', function() {
+  // Only run on home page to avoid conflicts
+  if (!document.querySelector('.hero-container')) {
+    return;
+  }
+
+  // Custom Cursor Implementation
+  const cursor = document.querySelector('.custom-cursor');
+  const mouseTrails = [];
+  const maxTrails = 10;
+  
+  // Create mouse trail elements
+  for (let i = 0; i < maxTrails; i++) {
+    const trail = document.createElement('div');
+    trail.className = 'mouse-trail';
+    trail.style.opacity = (1 - i / maxTrails) * 0.7;
+    document.body.appendChild(trail);
+    mouseTrails.push({ element: trail, x: 0, y: 0 });
+  }
+
+  let mouseX = 0, mouseY = 0;
+  let cursorX = 0, cursorY = 0;
+
+  // Mouse movement handler
+  document.addEventListener('mousemove', (e) => {
+    // Don't apply custom cursor effects within navbar
+    if (e.target.closest('.navbar-container')) {
+      return;
+    }
+    
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    
+    // Update mouse trails
+    mouseTrails.forEach((trail, index) => {
+      setTimeout(() => {
+        trail.element.style.left = mouseX - 3 + 'px';
+        trail.element.style.top = mouseY - 3 + 'px';
+      }, index * 20);
+    });
+  });
+
+  // Smooth cursor animation
+  function animateCursor() {
+    cursorX += (mouseX - cursorX) * 0.2;
+    cursorY += (mouseY - cursorY) * 0.2;
+    
+    cursor.style.left = cursorX - 10 + 'px';
+    cursor.style.top = cursorY - 10 + 'px';
+    
+    requestAnimationFrame(animateCursor);
+  }
+  animateCursor();
+
+  // Hover effects for interactive elements
+  const interactiveElements = document.querySelectorAll('a, button, .chart-container, .floating-icons, .feature-card, .hero-title, .hero-subtitle, .floating-data');
+  
+  interactiveElements.forEach(element => {
+    element.addEventListener('mouseenter', () => {
+      // Don't apply custom cursor effects within navbar
+      if (element.closest('.navbar-container')) {
+        return;
+      }
+      cursor.classList.add('hover');
+    });
+    
+    element.addEventListener('mouseleave', () => {
+      // Don't apply custom cursor effects within navbar
+      if (element.closest('.navbar-container')) {
+        return;
+      }
+      cursor.classList.remove('hover');
+    });
+  });
+
+  // Click ripple effect
+  document.addEventListener('click', (e) => {
+    // Don't apply custom cursor effects within navbar
+    if (e.target.closest('.navbar-container')) {
+      return;
+    }
+    
+    cursor.classList.add('click');
+    setTimeout(() => cursor.classList.remove('click'), 150);
+    
+    // Create ripple effect
+    const ripple = document.createElement('div');
+    ripple.className = 'click-ripple';
+    ripple.style.left = e.clientX - 25 + 'px';
+    ripple.style.top = e.clientY - 25 + 'px';
+    ripple.style.width = '50px';
+    ripple.style.height = '50px';
+    
+    document.body.appendChild(ripple);
+    
+    setTimeout(() => {
+      document.body.removeChild(ripple);
+    }, 600);
+  });
+
+  // Parallax mouse movement effect
+  const parallaxElements = document.querySelectorAll('.parallax-element');
+  
+  document.addEventListener('mousemove', (e) => {
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    const deltaX = (e.clientX - centerX) / centerX;
+    const deltaY = (e.clientY - centerY) / centerY;
+    
+    parallaxElements.forEach((element, index) => {
+      const speed = (index + 1) * 2;
+      const x = deltaX * speed;
+      const y = deltaY * speed;
+      
+      element.style.transform = `translate(${x}px, ${y}px)`;
+    });
+  });
+
+  // Enhanced floating icons magnetic effect
+  const floatingIcons = document.querySelectorAll('.floating-icons');
+  
+  floatingIcons.forEach(icon => {
+    icon.addEventListener('mousemove', (e) => {
+      const rect = icon.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      const deltaX = (e.clientX - centerX) * 0.3;
+      const deltaY = (e.clientY - centerY) * 0.3;
+      
+      icon.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(1.3) rotate(15deg)`;
+    });
+    
+    icon.addEventListener('mouseleave', () => {
+      icon.style.transform = '';
+    });
+  });
+
+  // Chart container 3D tilt effect
+  const chartContainer = document.querySelector('.chart-container');
+  
+  if (chartContainer) {
+    chartContainer.addEventListener('mousemove', (e) => {
+      const rect = chartContainer.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      const rotateX = (e.clientY - centerY) / 10;
+      const rotateY = (centerX - e.clientX) / 10;
+      
+      chartContainer.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.05)`;
+    });
+    
+    chartContainer.addEventListener('mouseleave', () => {
+      chartContainer.style.transform = '';
+    });
+  }
+
+  // Feature card magnetic hover effect
+  const featureCards = document.querySelectorAll('.feature-card');
+  
+  featureCards.forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      const deltaX = (e.clientX - centerX) * 0.1;
+      const deltaY = (e.clientY - centerY) * 0.1;
+      
+      card.style.transform = `translate(${deltaX}px, ${deltaY}px) translateY(-15px) scale(1.02)`;
+    });
+    
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = '';
+    });
+  });
+
+  // Scroll animations
+  const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+      }
+    });
+  }, observerOptions);
+
+  document.querySelectorAll('.animate-on-scroll').forEach(el => {
+    observer.observe(el);
+  });
+
+  // Counter animation
+  function animateCounter(element, target) {
+    let count = 0;
+    const increment = target / 100;
+    const timer = setInterval(() => {
+      count += increment;
+      if (count >= target) {
+        count = target;
+        clearInterval(timer);
+      }
+      element.textContent = Math.floor(count);
+    }, 20);
+  }
+
+  // Trigger counter animation when stats section is in view
+  const statsObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const statNumbers = entry.target.querySelectorAll('.stat-number');
+        statNumbers.forEach(stat => {
+          const target = parseInt(stat.getAttribute('data-target'));
+          animateCounter(stat, target);
+        });
+        statsObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  const statsContainer = document.querySelector('.stats-container');
+  if (statsContainer) {
+    statsObserver.observe(statsContainer);
+  }
+
+  // Dynamic price updates for realism
+  const priceElement = document.querySelector('.chart-label.price');
+  if (priceElement) {
+    setInterval(() => {
+      const basePrice = 24567.89;
+      const variation = (Math.random() - 0.5) * 100;
+      const newPrice = basePrice + variation;
+      priceElement.textContent = `$${newPrice.toFixed(2)}`;
+    }, 3000);
+  }
+
+  // Add sparkle effect on random intervals
+  function createSparkle() {
+    const sparkle = document.createElement('div');
+    sparkle.style.position = 'fixed';
+    sparkle.style.width = '4px';
+    sparkle.style.height = '4px';
+    sparkle.style.background = 'var(--accent-green)';
+    sparkle.style.borderRadius = '50%';
+    sparkle.style.pointerEvents = 'none';
+    sparkle.style.zIndex = '9999';
+    sparkle.style.boxShadow = '0 0 10px var(--accent-green)';
+    
+    sparkle.style.left = Math.random() * window.innerWidth + 'px';
+    sparkle.style.top = Math.random() * window.innerHeight + 'px';
+    
+    document.body.appendChild(sparkle);
+    
+    sparkle.animate([
+      { opacity: 0, transform: 'scale(0)' },
+      { opacity: 1, transform: 'scale(1)' },
+      { opacity: 0, transform: 'scale(0)' }
+    ], {
+      duration: 1000,
+      easing: 'ease-in-out'
+    }).onfinish = () => {
+      document.body.removeChild(sparkle);
+    };
+  }
+
+  // Create sparkles periodically
+  setInterval(createSparkle, 2000);
+
+  // Particle Explosion Effect on Click
+  function createParticleExplosion(x, y) {
+    const explosion = document.createElement('div');
+    explosion.className = 'particle-explosion';
+    explosion.style.left = x + 'px';
+    explosion.style.top = y + 'px';
+    
+    // Create multiple explosion particles
+    for (let i = 0; i < 12; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'explosion-particle';
+      
+      const angle = (i / 12) * Math.PI * 2;
+      const distance = 50 + Math.random() * 50;
+      const dx = Math.cos(angle) * distance;
+      const dy = Math.sin(angle) * distance;
+      
+      particle.style.setProperty('--dx', dx + 'px');
+      particle.style.setProperty('--dy', dy + 'px');
+      
+      explosion.appendChild(particle);
+    }
+    
+    document.body.appendChild(explosion);
+    
+    setTimeout(() => {
+      document.body.removeChild(explosion);
+    }, 1000);
+  }
+
+  // Add explosion effect to clicks on interactive elements
+  interactiveElements.forEach(element => {
+    element.addEventListener('click', (e) => {
+      e.preventDefault();
+      createParticleExplosion(e.clientX, e.clientY);
+      
+      // Still navigate after explosion
+      setTimeout(() => {
+        if (element.href) {
+          window.location.href = element.href;
+        }
+      }, 300);
+    });
+  });
+
+  // Dynamic Geometric Shape Creation
+  function createRandomGeometricShape() {
+    const shapes = ['triangle', 'hexagon', 'diamond'];
+    const randomShape = shapes[Math.floor(Math.random() * shapes.length)];
+    
+    const shape = document.createElement('div');
+    shape.className = `geometric-shape ${randomShape}`;
+    shape.style.left = Math.random() * 100 + '%';
+    shape.style.animationDelay = Math.random() * 5 + 's';
+    shape.style.animationDuration = (15 + Math.random() * 10) + 's';
+    
+    const heroContainer = document.querySelector('.hero-container');
+    heroContainer.appendChild(shape);
+    
+    // Remove shape after animation
+    setTimeout(() => {
+      if (heroContainer.contains(shape)) {
+        heroContainer.removeChild(shape);
+      }
+    }, 25000);
+  }
+
+  // Create new geometric shapes periodically
+  setInterval(createRandomGeometricShape, 3000);
+
+  // Enhanced Sound Wave Interaction - REMOVED
+  // const soundWave = document.querySelector('.sound-wave');
+  // if (soundWave) {
+  //   soundWave.addEventListener('click', () => {
+  //     const bars = soundWave.querySelectorAll('.wave-bar');
+  //     bars.forEach((bar, index) => {
+  //       bar.style.animationDuration = (0.3 + Math.random() * 0.5) + 's';
+  //       bar.style.height = (10 + Math.random() * 30) + 'px';
+  //       
+  //       setTimeout(() => {
+  //         bar.style.animationDuration = '1.5s';
+  //       }, 2000);
+  //     });
+  //   });
+  // }
+
+  // Floating Text Animation
+  function createFloatingText(text, x, y) {
+    const floatingText = document.createElement('div');
+    floatingText.textContent = text;
+    floatingText.style.position = 'fixed';
+    floatingText.style.left = x + 'px';
+    floatingText.style.top = y + 'px';
+    floatingText.style.color = 'var(--accent-green)';
+    floatingText.style.fontSize = '14px';
+    floatingText.style.fontWeight = '600';
+    floatingText.style.pointerEvents = 'none';
+    floatingText.style.zIndex = '9999';
+    floatingText.style.opacity = '0';
+    
+    document.body.appendChild(floatingText);
+    
+    floatingText.animate([
+      { opacity: 0, transform: 'translateY(0) scale(0.8)' },
+      { opacity: 1, transform: 'translateY(-50px) scale(1)' },
+      { opacity: 0, transform: 'translateY(-100px) scale(1.2)' }
+    ], {
+      duration: 2000,
+      easing: 'ease-out'
+    }).onfinish = () => {
+      document.body.removeChild(floatingText);
+    };
+  }
+
+  // Random floating text messages
+  const tradingMessages = [
+    '+$1,247', 'PROFIT!', 'BUY SIGNAL', 'TREND UP', '+15.7%', 
+    'BULLISH', 'AI TRADING', 'SUCCESS', 'GROWTH', 'WINNING'
+  ];
+
+  setInterval(() => {
+    const message = tradingMessages[Math.floor(Math.random() * tradingMessages.length)];
+    const x = Math.random() * (window.innerWidth - 100);
+    const y = Math.random() * (window.innerHeight - 100);
+    createFloatingText(message, x, y);
+  }, 4000);
+
+  // Enhanced Chart Interaction with 3D Effects
+  if (chartContainer) {
+    chartContainer.addEventListener('click', () => {
+      // Trigger chart explosion effect
+      const candlesticks = chartContainer.querySelectorAll('.candlestick');
+      candlesticks.forEach((stick, index) => {
+        stick.animate([
+          { transform: 'scaleY(1) rotateX(0deg)' },
+          { transform: 'scaleY(1.5) rotateX(360deg)' },
+          { transform: 'scaleY(1) rotateX(0deg)' }
+        ], {
+          duration: 1000,
+          delay: index * 100,
+          easing: 'ease-in-out'
+        });
+      });
+    });
+  }
+
+  // Dynamic Tech Icon Movement
+  const techIcons = document.querySelectorAll('.tech-icon');
+  techIcons.forEach(icon => {
+    icon.addEventListener('mouseenter', () => {
+      icon.animate([
+        { transform: 'scale(1) rotate(0deg)' },
+        { transform: 'scale(1.5) rotate(180deg)' },
+        { transform: 'scale(1.2) rotate(360deg)' }
+      ], {
+        duration: 800,
+        easing: 'ease-out'
+      });
+    });
+  });
+
+  // Advanced Parallax with Depth Layers
+  document.addEventListener('mousemove', (e) => {
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    const deltaX = (e.clientX - centerX) / centerX;
+    const deltaY = (e.clientY - centerY) / centerY;
+    
+    // Layer 1: Slow movement (background elements)
+    const layer1 = document.querySelectorAll('.dna-helix, .radar-container');
+    layer1.forEach(element => {
+      const x = deltaX * 5;
+      const y = deltaY * 5;
+      element.style.transform = `translate(${x}px, ${y}px)`;
+    });
+    
+    // Layer 2: Medium movement (geometric shapes)
+    const layer2 = document.querySelectorAll('.geometric-shape');
+    layer2.forEach(element => {
+      const x = deltaX * 10;
+      const y = deltaY * 10;
+      element.style.transform = `translate(${x}px, ${y}px) rotate(${deltaX * 20}deg)`;
+    });
+    
+    // Layer 3: Fast movement (tech icons)
+    const layer3 = document.querySelectorAll('.tech-icon');
+    layer3.forEach((element, index) => {
+      const speed = (index + 1) * 3;
+      const x = deltaX * speed;
+      const y = deltaY * speed;
+      element.style.transform = `translate(${x}px, ${y}px) rotate(${deltaX * 30}deg)`;
+    });
+  });
+
+  // Holographic Text Glitch Effect
+  const holographicTitle = document.querySelector('.holographic');
+  if (holographicTitle) {
+    setInterval(() => {
+      holographicTitle.style.textShadow = `
+        ${Math.random() * 10 - 5}px ${Math.random() * 10 - 5}px 0 #ff00ff,
+        ${Math.random() * 10 - 5}px ${Math.random() * 10 - 5}px 0 #00ffff
+      `;
+      
+      setTimeout(() => {
+        holographicTitle.style.textShadow = 'none';
+      }, 100);
+    }, 3000);
+  }
+
+  // Rainbow Trail Effect for Cursor
+  function createRainbowTrail(x, y) {
+    const colors = ['#ff0000', '#ff8800', '#ffff00', '#88ff00', '#00ff88', '#00ffff', '#8800ff', '#ff0088'];
+    const trail = document.createElement('div');
+    trail.style.position = 'fixed';
+    trail.style.left = x + 'px';
+    trail.style.top = y + 'px';
+    trail.style.width = '8px';
+    trail.style.height = '8px';
+    trail.style.background = colors[Math.floor(Math.random() * colors.length)];
+    trail.style.borderRadius = '50%';
+    trail.style.pointerEvents = 'none';
+    trail.style.zIndex = '9990';
+    trail.style.opacity = '0.7';
+    
+    document.body.appendChild(trail);
+    
+    trail.animate([
+      { opacity: 0.7, transform: 'scale(1)' },
+      { opacity: 0, transform: 'scale(0)' }
+    ], {
+      duration: 1000,
+      easing: 'ease-out'
+    }).onfinish = () => {
+      document.body.removeChild(trail);
+    };
+  }
+
+  // Create rainbow trail on mouse movement (throttled)
+  let lastTrailTime = 0;
+  document.addEventListener('mousemove', (e) => {
+    const now = Date.now();
+    if (now - lastTrailTime > 50) { // Throttle to every 50ms
+      createRainbowTrail(e.clientX, e.clientY);
+      lastTrailTime = now;
+    }
+  });
+});
+</script>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">

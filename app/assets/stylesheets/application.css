@@ -83,3 +83,36 @@
 body.bg-gray-50 {
   background-color: #f9fafb;
 }
+
+/* Modern feature card hover effect */
+.feature-card:hover {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 8px 32px rgba(13,110,253,0.15);
+  transition: all 0.2s;
+}
+
+.btn-warning, .btn-outline-light {
+  border-radius: 2rem;
+}
+
+/* Robinhood-inspired hero section */
+.hero-section {
+  min-height: 70vh;
+  background: linear-gradient(120deg, #181818 60%, #232946 100%);
+  color: #fff;
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
+.btn-success {
+  background: #a3ff12 !important;
+  color: #181818 !important;
+  border: none;
+  border-radius: 2rem;
+  font-weight: 600;
+  font-size: 1.2rem;
+  transition: background 0.2s, color 0.2s;
+}
+.btn-success:hover {
+  background: #cfff4d !important;
+  color: #181818 !important;
+}
