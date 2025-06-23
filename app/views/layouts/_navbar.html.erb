@@ -92,7 +92,7 @@
                   Settings
                 </a>
                 <div class="dropdown-divider"></div>
-                <%= button_to destroy_user_session_path, method: :delete, class: "dropdown-item logout-button" do %>
+                <%= button_to destroy_user_session_path, method: :delete, data: { turbo: "false" }, class: "dropdown-item logout-button" do %>
                   <svg class="dropdown-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                   </svg>
@@ -102,7 +102,7 @@
             </div>
           <% else %>
             <div class="auth-buttons">
-              <a href="<%= new_user_session_path %>" class="auth-link signin">Sign In</a>
+              <a href="<%= new_user_session_path %>" class="auth-link signup signin">Sign In</a>
               <a href="<%= new_user_registration_path %>" class="auth-link signup">Sign Up</a>
             </div>
           <% end %>
@@ -196,12 +196,7 @@
               </svg>
               Settings
             </a>
-            <%= button_to destroy_user_session_path, method: :delete, class: "mobile-dropdown-item mobile-logout-button" do %>
-              <svg class="mobile-dropdown-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-              </svg>
-              Sign out
-            <% end %>
+            <%= link_to "Sign out", destroy_user_session_path, method: :delete, data: { turbo: "false" }, class: "mobile-dropdown-item mobile-logout-button" %>
           </div>
         <% else %>
           <div class="mobile-auth-buttons">
@@ -591,6 +586,19 @@
 .auth-link.signup:hover {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
+}
+
+.auth-link.signup.signin {
+  background: var(--navbar-accent-green) !important;
+  color: var(--navbar-primary-dark) !important;
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.auth-link.signup.signin:hover {
+  filter: brightness(1.1);
 }
 
 .mobile-menu-button {
