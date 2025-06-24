@@ -24,12 +24,23 @@ class AlpacaDataService
                  limit: ENV.fetch("POLL_LIMIT") || 50,
                  from: nil,
                  to: nil)
-    # Use historical data from a specific time range that should be accessible
-    # Common free tier allows access to data that's not recent
+    # Smart data fetching strategy that works within subscription limits
     if from.nil? && to.nil?
-      # Use data from 2023 which should be accessible on most plans
-      to = "2025-05-28T16:00:00Z"
-      from = "2025-05-27T09:30:00Z"
+      # Strategy: Try to get the most recent data available within subscription limits
+      # Most basic Alpaca plans allow data that's 15+ minutes old
+      
+      current_time = Time.current
+      est_time = current_time.in_time_zone('America/New_York')
+      
+      # Try recent data first (15 minutes ago to account for SIP data limitations)
+      recent_end_time = current_time - 15.minutes
+      recent_start_time = recent_end_time - 2.hours
+      
+      Rails.logger.info "Attempting to fetch recent data for #{symbol} (15+ minutes delayed)"
+      
+      # First attempt: Try recent data within subscription limits
+      to = recent_end_time.utc.iso8601
+      from = recent_start_time.utc.iso8601
     end
     
     params = { timeframe: timeframe, limit: limit }
@@ -50,7 +61,26 @@ class AlpacaDataService
     end
     
     if response.success?
-      JSON.parse(response.body)
+      result = JSON.parse(response.body)
+      
+      # Log the data freshness for debugging
+      if result["bars"] && result["bars"].any?
+        latest_timestamp = Time.parse(result["bars"].last["t"]) rescue nil
+        if latest_timestamp
+          age_hours = ((Time.current - latest_timestamp) / 3600).round(1)
+          age_minutes = ((Time.current - latest_timestamp) / 60).round(1)
+          Rails.logger.info "Latest data timestamp: #{latest_timestamp} (#{age_hours} hours / #{age_minutes} minutes old)"
+        end
+      end
+      
+      result
+    elsif response.status == 403 && response.body.include?("recent SIP data")
+      # Handle subscription limitation gracefully
+      @last_error = "Subscription limits prevent real-time data access. Using available market data within subscription limits."
+      Rails.logger.warn("#{@last_error} Falling back to longer delay...")
+      
+      # Fallback: Try data from yesterday during market hours
+      fallback_strategy(symbol, timeframe, limit)
     else
       @last_error = "Alpaca Data Error (#{response.status}): #{response.body}"
       Rails.logger.error(@last_error)
@@ -159,6 +189,50 @@ class AlpacaDataService
       f.headers["APCA-API-KEY-ID"] = @api_key_id
       f.headers["APCA-API-SECRET-KEY"] = @api_secret_key
       f.adapter Faraday.default_adapter
+    end
+  end
+
+  def fallback_strategy(symbol, timeframe, limit)
+    # Use the most recent trading day data that should be accessible
+    current_time = Time.current
+    est_time = current_time.in_time_zone('America/New_York')
+    
+    # Get yesterday's market hours (or Friday if it's weekend)
+    trading_day = est_time.wday == 1 ? est_time - 3.days : est_time - 1.day # Monday goes to Friday
+    
+    market_start = trading_day.change(hour: 9, min: 30)
+    market_end = trading_day.change(hour: 16, min: 0)
+    
+    params = {
+      timeframe: timeframe,
+      limit: limit,
+      start: market_start.utc.iso8601,
+      end: market_end.utc.iso8601
+    }
+
+    Rails.logger.info "Fallback: Fetching #{symbol} data from #{market_start.strftime('%Y-%m-%d %H:%M %Z')} to #{market_end.strftime('%Y-%m-%d %H:%M %Z')}"
+
+    response = connection.get("stocks/#{symbol}/bars", params)
+    @last_response = response
+    
+    if response.success?
+      result = JSON.parse(response.body)
+      
+      # Update error message to be more informative
+      if result["bars"] && result["bars"].any?
+        latest_timestamp = Time.parse(result["bars"].last["t"]) rescue nil
+        if latest_timestamp
+          age_hours = ((Time.current - latest_timestamp) / 3600).round(1)
+          @last_error = "Using most recent available data (#{age_hours} hours old) due to subscription limits on real-time data."
+          Rails.logger.info @last_error
+        end
+      end
+      
+      result
+    else
+      @last_error = "Fallback failed - Alpaca Data Error (#{response.status}): #{response.body}"
+      Rails.logger.error(@last_error)
+      nil
     end
   end
 end 
