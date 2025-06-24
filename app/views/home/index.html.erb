@@ -49,6 +49,16 @@
     cursor: none; /* Hide default cursor */
   }
 
+  /* Override cursor and pointer events for navbar elements to ensure functionality */
+  .navbar-container,
+  .navbar-container *,
+  .navbar-container button,
+  .navbar-container a,
+  .navbar-container form {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+  }
+
   /* Target only main content area - remove any gaps */
   main {
     margin: 0;
@@ -1605,8 +1615,8 @@ document.addEventListener('turbo:load', function() {
   }
   animateCursor();
 
-  // Hover effects for interactive elements
-  const interactiveElements = document.querySelectorAll('a, button, .chart-container, .floating-icons, .feature-card, .hero-title, .hero-subtitle, .floating-data');
+  // Hover effects for interactive elements (excluding navbar)
+  const interactiveElements = document.querySelectorAll('a:not(.navbar-container a), button:not(.navbar-container button), .chart-container, .floating-icons, .feature-card, .hero-title, .hero-subtitle, .floating-data');
   
   interactiveElements.forEach(element => {
     element.addEventListener('mouseenter', () => {
@@ -1856,6 +1866,11 @@ document.addEventListener('turbo:load', function() {
   // Add explosion effect to clicks on interactive elements
   interactiveElements.forEach(element => {
     element.addEventListener('click', (e) => {
+      // Don't interfere with navbar elements
+      if (e.target.closest('.navbar-container')) {
+        return;
+      }
+      
       e.preventDefault();
       createParticleExplosion(e.clientX, e.clientY);
       
