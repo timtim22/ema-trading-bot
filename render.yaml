@@ -3,8 +3,6 @@ services:
     name: ema-trading-bot
     runtime: docker
     plan: free
-    buildCommand: ""
-    startCommand: "./bin/thrust ./bin/rails server"
     envVars:
       - key: RAILS_ENV
         value: production
@@ -31,6 +29,7 @@ services:
     name: ema-trading-bot-redis
     plan: free
     maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
 
 databases:
   - name: ema-trading-bot-db
