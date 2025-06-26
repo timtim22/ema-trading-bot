@@ -142,7 +142,7 @@ export default class extends Controller {
     if (!container) {
       container = document.createElement('div')
       container.id = 'notification-container'
-      container.className = 'fixed top-4 right-4 z-50 space-y-2 pointer-events-none'
+      container.className = 'fixed top-20 right-4 z-50 space-y-2 pointer-events-none'
       container.style.maxWidth = '384px' // max-w-sm equivalent
       document.body.appendChild(container)
     }

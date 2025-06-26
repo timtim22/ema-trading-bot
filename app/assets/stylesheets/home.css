@@ -128,38 +128,36 @@
 
 .flash-notice, .flash-alert {
   padding: 1rem;
-  border-radius: 6px;
+  border-radius: 8px;
   margin-bottom: 1rem;
-  text-align: center;
-  position: fixed;
-  top: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
-  box-shadow: var(--card-shadow);
-  animation: fadeIn 0.3s ease-in-out;
+  text-align: left;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  animation: slideInFromTop 0.3s ease-out;
   max-width: 90%;
-  width: 500px;
+  width: 100%;
+  backdrop-filter: blur(10px);
 }
 
 .flash-notice {
-  background-color: var(--success-color);
+  background: linear-gradient(135deg, #581c87 0%, #7c3aed 100%);
   color: white;
+  border: 1px solid #8b5cf6;
 }
 
 .flash-alert {
-  background-color: var(--danger-color);
+  background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%);
   color: white;
+  border: 1px solid #ef4444;
 }
 
-@keyframes fadeIn {
+@keyframes slideInFromTop {
   from {
     opacity: 0;
-    transform: translate(-50%, -20px);
+    transform: translateY(-20px);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, 0);
+    transform: translateY(0);
   }
 }
 

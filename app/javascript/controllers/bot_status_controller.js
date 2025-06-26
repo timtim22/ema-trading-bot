@@ -128,7 +128,7 @@ export default class extends Controller {
     } else {
       // Create a simple notification fallback
       const notification = document.createElement('div')
-      notification.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white ${
+      notification.className = `fixed top-20 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white ${
         type === 'success' ? 'bg-green-500' : 
         type === 'error' ? 'bg-red-500' : 'bg-blue-500'
       }`
