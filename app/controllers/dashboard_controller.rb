@@ -45,14 +45,25 @@ class DashboardController < ApplicationController
         begin
           # Clear any existing scheduled jobs for this symbol to prevent duplicates
           Rails.logger.info "DashboardController: Clearing existing jobs for #{symbol}"
-          require 'sidekiq/api'
-          Sidekiq::ScheduledSet.new.each do |job|
-            if job.klass == 'Sidekiq::ActiveJob::Wrapper' && 
-               job.args.first['job_class'] == 'MarketPingJob' && 
-               job.args.first['arguments'] == [symbol]
-              Rails.logger.info "DashboardController: Removing duplicate job for #{symbol}"
-              job.delete
+          
+          # Handle job cleanup based on queue adapter
+          if Rails.application.config.active_job.queue_adapter == :sidekiq
+            begin
+              require 'sidekiq/api'
+              Sidekiq::ScheduledSet.new.each do |job|
+                if job.klass == 'Sidekiq::ActiveJob::Wrapper' && 
+                   job.args.first['job_class'] == 'MarketPingJob' && 
+                   job.args.first['arguments'] == [symbol]
+                  Rails.logger.info "DashboardController: Removing duplicate Sidekiq job for #{symbol}"
+                  job.delete
+                end
+              end
+            rescue => e
+              Rails.logger.warn "DashboardController: Sidekiq not available: #{e.message}"
             end
+          else
+            # For Solid Queue, we'll let it handle duplicates naturally
+            Rails.logger.info "DashboardController: Using Solid Queue, skipping duplicate cleanup"
           end
           
           bot_state = BotState.start!(symbol)
