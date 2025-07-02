@@ -38,7 +38,6 @@ Rails.application.routes.draw do
   post '/dashboard/stop_bot', to: 'dashboard#stop_bot'
   get '/dashboard/bot_status', to: 'dashboard#bot_status'
   get '/dashboard/market_data', to: 'dashboard#market_data'
-  get '/dashboard/test_cable', to: 'dashboard#test_cable_connection'
   
   # Paper trading routes
   get '/dashboard/paper_trading_info', to: 'dashboard#paper_trading_info'
