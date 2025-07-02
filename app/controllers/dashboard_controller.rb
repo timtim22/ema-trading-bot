@@ -396,6 +396,39 @@ class DashboardController < ApplicationController
     # The data will be loaded via AJAX from paper_trading_info
   end
   
+  # Test ActionCable connection endpoint for debugging
+  def test_cable_connection
+    begin
+      test_data = {
+        type: 'ping',
+        symbol: 'AAPL',
+        price: 196.49,
+        timestamp: Time.current.to_i,
+        source: 'debug_test',
+        message: 'ActionCable test from dashboard'
+      }
+      
+      ActionCable.server.broadcast("market_channel", test_data)
+      
+      Rails.logger.info "✅ ActionCable test broadcast sent: #{test_data}"
+      
+      render json: { 
+        success: true, 
+        message: "ActionCable test broadcast sent",
+        data: test_data,
+        adapter: Rails.application.config.action_cable.adapter,
+        timestamp: Time.current.iso8601
+      }
+    rescue => e
+      Rails.logger.error "❌ ActionCable test failed: #{e.message}"
+      render json: { 
+        success: false, 
+        error: e.message,
+        timestamp: Time.current.iso8601
+      }, status: 500
+    end
+  end
+  
   private
   
   # Calculate EMAs from closing prices (same logic as MarketPingJob)

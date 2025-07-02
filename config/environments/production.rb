@@ -79,6 +79,14 @@ Rails.application.configure do
   # Only use :id for inspections in production.
   config.active_record.attributes_for_inspect = [ :id ]
 
+  # ActionCable configuration for production
+  config.action_cable.mount_path = '/cable'
+  config.action_cable.url = 'wss://ema-trading-bot.onrender.com/cable'
+  config.action_cable.allowed_request_origins = [
+    'https://ema-trading-bot.onrender.com',
+    /https:\/\/ema-trading-bot\.onrender\.com.*/
+  ]
+
   # Enable DNS rebinding protection and other `Host` header attacks.
   # config.hosts = [
   #   "example.com",     # Allow requests from example.com
