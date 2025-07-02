@@ -4,34 +4,60 @@ class DashboardController < ApplicationController
   before_action :authenticate_user!
   
   def index
-    # Check market hours and show warning if needed
-    check_and_warn_market_hours
-    
-    # Get paper trading information
-    @paper_trading_info = PaperTradingService.get_trading_mode_info
-    @paper_trading_validation = PaperTradingService.validate_paper_environment
-    
-    # Get paper trading account info and performance if in paper mode
-    if PaperTradingService.paper_trading_enabled?
-      paper_service = PaperTradingService.new
-      @paper_account = paper_service.get_paper_account_info
-      @paper_performance = paper_service.calculate_paper_performance
-      @paper_positions = paper_service.get_paper_positions
-      @paper_recent_orders = paper_service.get_paper_orders(limit: 10)
+    begin
+      # Check market hours and show warning if needed
+      check_and_warn_market_hours
+      
+      # Get paper trading information
+      @paper_trading_info = PaperTradingService.get_trading_mode_info
+      @paper_trading_validation = PaperTradingService.validate_paper_environment
+      
+      # Get paper trading account info and performance if in paper mode
+      if PaperTradingService.paper_trading_enabled?
+        paper_service = PaperTradingService.new
+        @paper_account = paper_service.get_paper_account_info
+        @paper_performance = paper_service.calculate_paper_performance
+        @paper_positions = paper_service.get_paper_positions
+        @paper_recent_orders = paper_service.get_paper_orders(limit: 10)
+      end
+      
+      # Get the default symbol from the user's tracked symbols or use URL param if provided
+      user_settings = BotSetting.for_user(current_user)
+      
+      # Use the first active tracked symbol, or default to AAPL if no symbols
+      # Add error handling for configured_symbols
+      begin
+        default_symbol = current_user.configured_symbols.first || 'AAPL'
+        @available_symbols = current_user.configured_symbols.presence || ['AAPL']
+      rescue => e
+        Rails.logger.error "Dashboard: Error getting configured symbols: #{e.message}"
+        default_symbol = 'AAPL'
+        @available_symbols = ['AAPL']
+      end
+      
+      @symbol = params[:symbol] || default_symbol
+      @timeframe = params[:timeframe] || user_settings.timeframe || '5m'
+      @bot_state = BotState.for_symbol(@symbol)
+      @all_bot_states = @available_symbols.map { |symbol| BotState.for_symbol(symbol) }
+      @positions = Position.open.for_user(current_user).recent_first
+      @trading_signals = current_user.recent_trading_signals(10)
+    rescue => e
+      Rails.logger.error "Dashboard index error: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      
+      # Set safe defaults
+      @symbol = 'AAPL'
+      @timeframe = '5m'
+      @available_symbols = ['AAPL']
+      @bot_state = BotState.for_symbol(@symbol)
+      @all_bot_states = [@bot_state]
+      @positions = []
+      @trading_signals = []
+      @paper_trading_info = { paper_trading: true }
+      @paper_trading_validation = { valid: false }
+      
+      flash.now[:error] = "Dashboard loaded with limited functionality due to a temporary issue."
     end
-    
-    # Get the default symbol from the user's tracked symbols or use URL param if provided
-    user_settings = BotSetting.for_user(current_user)
-    # Use the first active tracked symbol, or default to AAPL if no symbols
-    default_symbol = current_user.configured_symbols.first || 'AAPL'
-    
-    @symbol = params[:symbol] || default_symbol
-    @timeframe = params[:timeframe] || user_settings.timeframe || '5m'
-    @available_symbols = current_user.configured_symbols.presence || ['AAPL']
-    @bot_state = BotState.for_symbol(@symbol)
-    @all_bot_states = @available_symbols.map { |symbol| BotState.for_symbol(symbol) }
-    @positions = Position.open.for_user(current_user).recent_first
-    @trading_signals = current_user.recent_trading_signals(10)
   end
   
   def start_bot
