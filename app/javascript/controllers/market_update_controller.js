@@ -75,8 +75,22 @@ export default class extends Controller {
     }
     
     if (this.hasLastUpdateTarget) {
-      const timestamp = new Date(event.detail.timestamp * 1000).toLocaleTimeString()
-      this.lastUpdateTarget.textContent = `${timestamp} (${event.detail.symbol}) - $${event.detail.price}`
+      const date = new Date(event.detail.timestamp * 1000)
+      const timestamp = date.toLocaleTimeString('en-US', {
+        timeZone: 'America/New_York',
+        hour12: true,
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit'
+      })
+      
+      // Automatically detect EDT vs EST based on daylight saving time
+      const timezoneName = date.toLocaleDateString('en-US', {
+        timeZone: 'America/New_York',
+        timeZoneName: 'short'
+      }).split(', ')[1]
+      
+      this.lastUpdateTarget.textContent = `${timestamp} ${timezoneName} (${event.detail.symbol}) - $${event.detail.price}`
     }
     
     // Update data source indicator

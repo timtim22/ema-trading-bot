@@ -175,9 +175,22 @@ export default class extends Controller {
     const dotColor = signal.signal_type === 'buy' ? 'bg-green-400' : 'bg-red-400'
     const textColor = signal.signal_type === 'buy' ? 'text-green-600' : 'text-red-600'
     
-    // Format timestamp to match server-side formatting (MM/DD HH:MM)
+    // Format timestamp to match server-side formatting (MM/DD HH:MM) in EDT/EST
     const timestamp = new Date(signal.timestamp * 1000)
-    const formatted_date_time = `${(timestamp.getMonth() + 1).toString().padStart(2, '0')}/${timestamp.getDate().toString().padStart(2, '0')} ${timestamp.getHours().toString().padStart(2, '0')}:${timestamp.getMinutes().toString().padStart(2, '0')}`
+    const edtDate = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/New_York',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).formatToParts(timestamp)
+    
+    const month = edtDate.find(part => part.type === 'month').value
+    const day = edtDate.find(part => part.type === 'day').value
+    const hour = edtDate.find(part => part.type === 'hour').value
+    const minute = edtDate.find(part => part.type === 'minute').value
+    const formatted_date_time = `${month}/${day} ${hour}:${minute}`
     
     return `
       <td class="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">${formatted_date_time}</td>
