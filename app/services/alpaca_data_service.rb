@@ -42,6 +42,10 @@ class AlpacaDataService
       return nil
     end
     
+    Rails.logger.info "AlpacaDataService: Fetching bars for #{symbol} (#{timeframe}, limit: #{limit})"
+    Rails.logger.info "AlpacaDataService: Using endpoint: #{BASE_URL}"
+    Rails.logger.info "AlpacaDataService: API Key ID present: #{@api_key_id.present?} (first 4 chars: #{@api_key_id&.first(4)})"
+    
     # Smart data fetching strategy that works within subscription limits
     if from.nil? && to.nil?
       # Strategy: Try to get the most recent data available within subscription limits
@@ -54,7 +58,8 @@ class AlpacaDataService
       recent_end_time = current_time - 15.minutes
       recent_start_time = recent_end_time - 2.hours
       
-      Rails.logger.info "Attempting to fetch recent data for #{symbol} (15+ minutes delayed)"
+      Rails.logger.info "AlpacaDataService: Attempting to fetch recent data for #{symbol} (15+ minutes delayed)"
+      Rails.logger.info "AlpacaDataService: Time range: #{recent_start_time} to #{recent_end_time}"
       
       # First attempt: Try recent data within subscription limits
       to = recent_end_time.utc.iso8601
@@ -65,8 +70,21 @@ class AlpacaDataService
     params[:start] = from if from
     params[:end] = to if to
 
-    response = connection.get("stocks/#{symbol}/bars", params)
-    @last_response = response
+    Rails.logger.info "AlpacaDataService: Making request with params: #{params}"
+    
+    begin
+      response = connection.get("stocks/#{symbol}/bars", params)
+      @last_response = response
+      
+      Rails.logger.info "AlpacaDataService: Response status: #{response.status}"
+      Rails.logger.info "AlpacaDataService: Response headers: #{response.headers.to_h.select { |k,v| k.include?('ratelimit') || k.include?('content') }}"
+      
+    rescue => e
+      Rails.logger.error "AlpacaDataService: Network error during request: #{e.message}"
+      Rails.logger.error "AlpacaDataService: Error class: #{e.class.name}"
+      @last_error = "Network error: #{e.message}"
+      return nil
+    end
     
     # Log rate limit information
     if response.headers['x-ratelimit-remaining']
@@ -203,10 +221,21 @@ class AlpacaDataService
   private
   
   def connection
-    @connection ||= Faraday.new(url: BASE_URL) do |f|
-      f.headers["APCA-API-KEY-ID"] = @api_key_id
-      f.headers["APCA-API-SECRET-KEY"] = @api_secret_key
-      f.adapter Faraday.default_adapter
+    @connection ||= begin
+      Rails.logger.info "AlpacaDataService: Creating new Faraday connection to #{BASE_URL}"
+      Rails.logger.info "AlpacaDataService: Setting headers with API key ID: #{@api_key_id&.first(4)}..."
+      
+      Faraday.new(url: BASE_URL) do |f|
+        f.headers["APCA-API-KEY-ID"] = @api_key_id
+        f.headers["APCA-API-SECRET-KEY"] = @api_secret_key
+        f.headers["User-Agent"] = "EMATrading/1.0"
+        f.adapter Faraday.default_adapter
+        
+        # Add request/response logging for debugging
+        if Rails.env.development? || Rails.logger.level <= Logger::INFO
+          f.response :logger, Rails.logger, { headers: false, bodies: false }
+        end
+      end
     end
   end
 

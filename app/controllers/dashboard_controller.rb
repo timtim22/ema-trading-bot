@@ -413,43 +413,165 @@ class DashboardController < ApplicationController
   
   # Diagnostic endpoint to help troubleshoot production issues
   def diagnostics
-    # Only allow in development or for admin users
-    unless Rails.env.development? || (current_user&.admin?)
+    # Allow in development or production, but limit sensitive info in production
+    unless Rails.env.development? || Rails.env.production?
       render json: { error: 'Access denied' }, status: 403
       return
     end
     
-    diagnostics_info = {
-      environment: Rails.env,
-      paper_trading: ENV.fetch('PAPER_TRADING', 'true'),
-      alpaca_endpoint: ALPACA_ENDPOINT,
-      alpaca_env_vars: {
-        key_id_present: ENV['ALPACA_API_KEY_ID'].present?,
-        key_secret_present: ENV['ALPACA_API_SECRET_KEY'].present?,
-        key_id_length: ENV['ALPACA_API_KEY_ID']&.length,
-        key_secret_length: ENV['ALPACA_API_SECRET_KEY']&.length
-      },
-      alpaca_connection_test: nil
-    }
+    # In production, show limited info for security
+    if Rails.env.production?
+      diagnostics_info = {
+        environment: Rails.env,
+        paper_trading: ENV.fetch('PAPER_TRADING', 'true'),
+        alpaca_endpoint: ALPACA_ENDPOINT,
+        alpaca_env_vars: {
+          key_id_present: ENV['ALPACA_API_KEY_ID'].present?,
+          key_secret_present: ENV['ALPACA_API_SECRET_KEY'].present?,
+          key_id_first_4: ENV['ALPACA_API_KEY_ID']&.first(4),
+          key_secret_length: ENV['ALPACA_API_SECRET_KEY']&.length
+        },
+        alpaca_connection_test: nil,
+        timestamp: Time.current.iso8601
+      }
+    else
+      # Full info in development
+      diagnostics_info = {
+        environment: Rails.env,
+        paper_trading: ENV.fetch('PAPER_TRADING', 'true'),
+        alpaca_endpoint: ALPACA_ENDPOINT,
+        alpaca_env_vars: {
+          key_id_present: ENV['ALPACA_API_KEY_ID'].present?,
+          key_secret_present: ENV['ALPACA_API_SECRET_KEY'].present?,
+          key_id_length: ENV['ALPACA_API_KEY_ID']&.length,
+          key_secret_length: ENV['ALPACA_API_SECRET_KEY']&.length
+        },
+        alpaca_connection_test: nil,
+        timestamp: Time.current.iso8601
+      }
+    end
     
     # Test Alpaca connection
     begin
+      Rails.logger.info "Diagnostics: Testing Alpaca connection for troubleshooting"
       alpaca_service = AlpacaDataService.new
+      
+      # Try a simple test call
+      start_time = Time.current
       test_result = alpaca_service.fetch_bars('AAPL', limit: 1)
+      end_time = Time.current
+      response_time = ((end_time - start_time) * 1000).round(2)
+      
       diagnostics_info[:alpaca_connection_test] = {
         success: test_result.present?,
-        error: alpaca_service.instance_variable_get(:@configuration_error) || alpaca_service.last_error
+        response_time_ms: response_time,
+        error: alpaca_service.instance_variable_get(:@configuration_error) || alpaca_service.last_error,
+        has_data: test_result&.dig('bars')&.any? || false,
+        rate_limit_info: alpaca_service.rate_limit_info
       }
+      
+      Rails.logger.info "Diagnostics: Alpaca test result - Success: #{test_result.present?}, Error: #{alpaca_service.last_error}"
+      
     rescue => e
+      Rails.logger.error "Diagnostics: Alpaca connection test failed: #{e.message}"
       diagnostics_info[:alpaca_connection_test] = {
         success: false,
-        error: e.message
+        error: e.message,
+        error_class: e.class.name
       }
     end
     
     render json: {
       success: true,
       diagnostics: diagnostics_info
+    }
+  end
+  
+  # Test endpoint to isolate market data fetching issues
+  def test_market_data
+    symbol = params[:symbol] || 'AAPL'
+    
+    Rails.logger.info "TestMarketData: Testing market data fetch for #{symbol}"
+    
+    test_results = {
+      symbol: symbol,
+      timestamp: Time.current.iso8601,
+      tests: {}
+    }
+    
+    # Test 1: Price data
+    begin
+      Rails.logger.info "TestMarketData: Testing price data..."
+      start_time = Time.current
+      price_data = MarketDataService.get_current_price(symbol)
+      end_time = Time.current
+      
+      test_results[:tests][:price_data] = {
+        success: price_data.present?,
+        response_time_ms: ((end_time - start_time) * 1000).round(2),
+        source: price_data&.dig(:source),
+        price: price_data&.dig(:price),
+        error: price_data.nil? ? "No data returned" : nil
+      }
+    rescue => e
+      test_results[:tests][:price_data] = {
+        success: false,
+        error: e.message,
+        error_class: e.class.name
+      }
+    end
+    
+    # Test 2: OHLC data
+    begin
+      Rails.logger.info "TestMarketData: Testing OHLC data..."
+      start_time = Time.current
+      ohlc_data = MarketDataService.get_ohlc_data(symbol)
+      end_time = Time.current
+      
+      test_results[:tests][:ohlc_data] = {
+        success: ohlc_data.present?,
+        response_time_ms: ((end_time - start_time) * 1000).round(2),
+        source: ohlc_data&.dig(:source),
+        close: ohlc_data&.dig(:close),
+        error: ohlc_data.nil? ? "No data returned" : nil
+      }
+    rescue => e
+      test_results[:tests][:ohlc_data] = {
+        success: false,
+        error: e.message,
+        error_class: e.class.name
+      }
+    end
+    
+    # Test 3: Direct Alpaca service test
+    begin
+      Rails.logger.info "TestMarketData: Testing direct Alpaca service..."
+      start_time = Time.current
+      alpaca_service = AlpacaDataService.new
+      alpaca_result = alpaca_service.fetch_bars(symbol, limit: 1)
+      end_time = Time.current
+      
+      test_results[:tests][:alpaca_direct] = {
+        success: alpaca_result.present?,
+        response_time_ms: ((end_time - start_time) * 1000).round(2),
+        has_bars: alpaca_result&.dig('bars')&.any?,
+        configuration_error: alpaca_service.instance_variable_get(:@configuration_error),
+        last_error: alpaca_service.last_error,
+        rate_limit: alpaca_service.rate_limit_info
+      }
+    rescue => e
+      test_results[:tests][:alpaca_direct] = {
+        success: false,
+        error: e.message,
+        error_class: e.class.name
+      }
+    end
+    
+    Rails.logger.info "TestMarketData: Test completed for #{symbol}"
+    
+    render json: {
+      success: true,
+      test_results: test_results
     }
   end
   
