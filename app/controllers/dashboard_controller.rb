@@ -296,9 +296,14 @@ class DashboardController < ApplicationController
       # Check market hours and show warning if needed
       check_and_warn_market_hours
       
+      Rails.logger.info "DashboardController#market_data: Fetching data for #{symbol} (#{timeframe})"
+      
       # Get current market data using the same service as MarketPingJob
       price_data = MarketDataService.get_current_price(symbol)
       ohlc_data = MarketDataService.get_ohlc_data(symbol)
+      
+      Rails.logger.info "DashboardController#market_data: Price data source: #{price_data[:source]}"
+      Rails.logger.info "DashboardController#market_data: OHLC data source: #{ohlc_data[:source]}"
       
       # Get historical data based on timeframe
       historical_data = get_historical_data_for_timeframe(symbol, timeframe)
@@ -320,12 +325,21 @@ class DashboardController < ApplicationController
         historical_candles: historical_data[:candles]
       }
       
+      Rails.logger.info "DashboardController#market_data: Successfully fetched data for #{symbol}"
+      
       render json: {
         success: true,
         data: market_data
       }
     rescue => e
       Rails.logger.error "DashboardController#market_data: Error fetching data for #{symbol}: #{e.message}"
+      Rails.logger.error "DashboardController#market_data: #{e.backtrace.first(5).join("\n")}"
+      
+      # Check if this might be an environment variable issue
+      if e.message.include?('key not found') || e.message.include?('ALPACA')
+        Rails.logger.error "DashboardController#market_data: Possible missing environment variables"
+        Rails.logger.error "DashboardController#market_data: Available ENV keys: #{ENV.keys.grep(/ALPACA/).join(', ')}"
+      end
       
       # Broadcast data unavailable warning
       broadcast_data_unavailable_warning(symbol: symbol)
@@ -333,7 +347,8 @@ class DashboardController < ApplicationController
       render json: { 
         success: false, 
         error: 'Failed to fetch market data',
-        message: e.message 
+        message: e.message,
+        symbol: symbol
       }, status: 500
     end
   end
@@ -394,6 +409,48 @@ class DashboardController < ApplicationController
   def paper_trading_details
     # This renders the HTML page for paper trading details
     # The data will be loaded via AJAX from paper_trading_info
+  end
+  
+  # Diagnostic endpoint to help troubleshoot production issues
+  def diagnostics
+    # Only allow in development or for admin users
+    unless Rails.env.development? || (current_user&.admin?)
+      render json: { error: 'Access denied' }, status: 403
+      return
+    end
+    
+    diagnostics_info = {
+      environment: Rails.env,
+      paper_trading: ENV.fetch('PAPER_TRADING', 'true'),
+      alpaca_endpoint: ALPACA_ENDPOINT,
+      alpaca_env_vars: {
+        key_id_present: ENV['ALPACA_API_KEY_ID'].present?,
+        key_secret_present: ENV['ALPACA_API_SECRET_KEY'].present?,
+        key_id_length: ENV['ALPACA_API_KEY_ID']&.length,
+        key_secret_length: ENV['ALPACA_API_SECRET_KEY']&.length
+      },
+      alpaca_connection_test: nil
+    }
+    
+    # Test Alpaca connection
+    begin
+      alpaca_service = AlpacaDataService.new
+      test_result = alpaca_service.fetch_bars('AAPL', limit: 1)
+      diagnostics_info[:alpaca_connection_test] = {
+        success: test_result.present?,
+        error: alpaca_service.instance_variable_get(:@configuration_error) || alpaca_service.last_error
+      }
+    rescue => e
+      diagnostics_info[:alpaca_connection_test] = {
+        success: false,
+        error: e.message
+      }
+    end
+    
+    render json: {
+      success: true,
+      diagnostics: diagnostics_info
+    }
   end
   
   private

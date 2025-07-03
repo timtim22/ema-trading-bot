@@ -7,8 +7,19 @@ class AlpacaDataService
   attr_reader :last_response, :last_error
   
   def initialize(api_key_id = nil, api_secret_key = nil)
-    @api_key_id = api_key_id || ENV.fetch("ALPACA_API_KEY_ID")
-    @api_secret_key = api_secret_key || ENV.fetch("ALPACA_API_SECRET_KEY")
+    begin
+      @api_key_id = api_key_id || ENV.fetch("ALPACA_API_KEY_ID")
+      @api_secret_key = api_secret_key || ENV.fetch("ALPACA_API_SECRET_KEY")
+    rescue KeyError => e
+      Rails.logger.error "AlpacaDataService: Missing required environment variable: #{e.message}"
+      Rails.logger.error "AlpacaDataService: Required variables: ALPACA_API_KEY_ID, ALPACA_API_SECRET_KEY"
+      Rails.logger.error "AlpacaDataService: Available Alpaca-related ENV vars: #{ENV.keys.grep(/ALPACA/).join(', ')}"
+      
+      # Set to nil to allow graceful fallback to simulated data
+      @api_key_id = nil
+      @api_secret_key = nil
+      @configuration_error = "Missing Alpaca API credentials: #{e.message}"
+    end
   end
   
   # Fetch bar data for a given symbol and timeframe
@@ -24,6 +35,13 @@ class AlpacaDataService
                  limit: ENV.fetch("POLL_LIMIT") || 50,
                  from: nil,
                  to: nil)
+    # Check if service is properly configured
+    if @configuration_error
+      Rails.logger.warn "AlpacaDataService: Cannot fetch bars - #{@configuration_error}"
+      @last_error = @configuration_error
+      return nil
+    end
+    
     # Smart data fetching strategy that works within subscription limits
     if from.nil? && to.nil?
       # Strategy: Try to get the most recent data available within subscription limits

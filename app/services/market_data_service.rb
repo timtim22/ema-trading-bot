@@ -10,7 +10,14 @@ class MarketDataService
   def self.get_real_price(symbol)
     case Rails.env
     when 'production'
-      get_price_from_alpaca(symbol)
+      # In production, always try Alpaca first, then fallback to simulated
+      alpaca_result = get_price_from_alpaca(symbol)
+      if alpaca_result
+        alpaca_result
+      else
+        Rails.logger.warn "MarketDataService: Falling back to simulated data for #{symbol} in production"
+        get_simulated_price(symbol)
+      end
     when 'development'
       # Use real Alpaca data in development too, with fallback to simulated
       get_price_from_alpaca(symbol) || get_simulated_price(symbol)
@@ -26,9 +33,9 @@ class MarketDataService
   
   # Get OHLC data from Alpaca
   def self.get_ohlc_data(symbol, timeframe: '1Min', limit: 1)
-    alpaca_service = AlpacaDataService.new
-    
     begin
+      alpaca_service = AlpacaDataService.new
+      
       # Get the most recent bar data
       data = alpaca_service.fetch_bars(symbol, timeframe: timeframe, limit: limit)
       
@@ -47,19 +54,23 @@ class MarketDataService
         }
       else
         Rails.logger.warn "MarketDataService: No OHLC data available for #{symbol}, using simulated"
+        if alpaca_service.instance_variable_get(:@configuration_error)
+          Rails.logger.warn "MarketDataService: Alpaca configuration issue for OHLC: #{alpaca_service.instance_variable_get(:@configuration_error)}"
+        end
         get_simulated_ohlc(symbol)
       end
     rescue => e
       Rails.logger.error "MarketDataService: Error fetching OHLC data for #{symbol}: #{e.message}"
+      Rails.logger.error "MarketDataService: #{e.backtrace.first(3).join("\n")}"
       get_simulated_ohlc(symbol)
     end
   end
   
   # Get historical data for EMA calculations
   def self.get_historical_closes(symbol, timeframe: '1Min', limit: 50)
-    alpaca_service = AlpacaDataService.new
-    
     begin
+      alpaca_service = AlpacaDataService.new
+      
       closes_data = alpaca_service.fetch_closes_with_timestamp(symbol, timeframe: timeframe, limit: limit)
       
       if closes_data && closes_data[:closes]
@@ -71,10 +82,14 @@ class MarketDataService
         }
       else
         Rails.logger.warn "MarketDataService: No historical data available for #{symbol}, using simulated"
+        if alpaca_service.instance_variable_get(:@configuration_error)
+          Rails.logger.warn "MarketDataService: Alpaca configuration issue for historical data: #{alpaca_service.instance_variable_get(:@configuration_error)}"
+        end
         get_simulated_historical(symbol, limit)
       end
     rescue => e
       Rails.logger.error "MarketDataService: Error fetching historical data for #{symbol}: #{e.message}"
+      Rails.logger.error "MarketDataService: #{e.backtrace.first(3).join("\n")}"
       get_simulated_historical(symbol, limit)
     end
   end
@@ -154,10 +169,14 @@ class MarketDataService
         }
       else
         Rails.logger.warn "MarketDataService: No current price data for #{symbol} from Alpaca"
+        if alpaca_service.instance_variable_get(:@configuration_error)
+          Rails.logger.warn "MarketDataService: Alpaca configuration issue: #{alpaca_service.instance_variable_get(:@configuration_error)}"
+        end
         nil
       end
     rescue => e
       Rails.logger.error "MarketDataService: Error fetching Alpaca data for #{symbol}: #{e.message}"
+      Rails.logger.error "MarketDataService: #{e.backtrace.first(3).join("\n")}"
       nil
     end
   end
