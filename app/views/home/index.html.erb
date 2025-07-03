@@ -1885,6 +1885,13 @@ document.addEventListener('turbo:load', function() {
 
   // Dynamic Geometric Shape Creation
   function createRandomGeometricShape() {
+    const heroContainer = document.querySelector('.hero-container');
+    
+    // Only create shapes if we're on the home page and hero container exists
+    if (!heroContainer) {
+      return;
+    }
+    
     const shapes = ['triangle', 'hexagon', 'diamond'];
     const randomShape = shapes[Math.floor(Math.random() * shapes.length)];
     
@@ -1894,7 +1901,6 @@ document.addEventListener('turbo:load', function() {
     shape.style.animationDelay = Math.random() * 5 + 's';
     shape.style.animationDuration = (15 + Math.random() * 10) + 's';
     
-    const heroContainer = document.querySelector('.hero-container');
     heroContainer.appendChild(shape);
     
     // Remove shape after animation
@@ -1905,8 +1911,10 @@ document.addEventListener('turbo:load', function() {
     }, 25000);
   }
 
-  // Create new geometric shapes periodically
-  setInterval(createRandomGeometricShape, 3000);
+  // Create new geometric shapes periodically (only if hero container exists)
+  if (document.querySelector('.hero-container')) {
+    setInterval(createRandomGeometricShape, 3000);
+  }
 
   // Enhanced Sound Wave Interaction - REMOVED
   // const soundWave = document.querySelector('.sound-wave');
@@ -1952,18 +1960,21 @@ document.addEventListener('turbo:load', function() {
     };
   }
 
-  // Random floating text messages
+  // Random floating text messages (only on home page)
   const tradingMessages = [
     '+$1,247', 'PROFIT!', 'BUY SIGNAL', 'TREND UP', '+15.7%', 
     'BULLISH', 'AI TRADING', 'SUCCESS', 'GROWTH', 'WINNING'
   ];
 
-  setInterval(() => {
-    const message = tradingMessages[Math.floor(Math.random() * tradingMessages.length)];
-    const x = Math.random() * (window.innerWidth - 100);
-    const y = Math.random() * (window.innerHeight - 100);
-    createFloatingText(message, x, y);
-  }, 4000);
+  // Only create floating text if we're on the home page
+  if (document.querySelector('.hero-container')) {
+    setInterval(() => {
+      const message = tradingMessages[Math.floor(Math.random() * tradingMessages.length)];
+      const x = Math.random() * (window.innerWidth - 100);
+      const y = Math.random() * (window.innerHeight - 100);
+      createFloatingText(message, x, y);
+    }, 4000);
+  }
 
   // Enhanced Chart Interaction with 3D Effects
   if (chartContainer) {
@@ -1999,52 +2010,56 @@ document.addEventListener('turbo:load', function() {
     });
   });
 
-  // Advanced Parallax with Depth Layers
-  document.addEventListener('mousemove', (e) => {
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
-    const deltaX = (e.clientX - centerX) / centerX;
-    const deltaY = (e.clientY - centerY) / centerY;
-    
-    // Layer 1: Slow movement (background elements)
-    const layer1 = document.querySelectorAll('.dna-helix, .radar-container');
-    layer1.forEach(element => {
-      const x = deltaX * 5;
-      const y = deltaY * 5;
-      element.style.transform = `translate(${x}px, ${y}px)`;
-    });
-    
-    // Layer 2: Medium movement (geometric shapes)
-    const layer2 = document.querySelectorAll('.geometric-shape');
-    layer2.forEach(element => {
-      const x = deltaX * 10;
-      const y = deltaY * 10;
-      element.style.transform = `translate(${x}px, ${y}px) rotate(${deltaX * 20}deg)`;
-    });
-    
-    // Layer 3: Fast movement (tech icons)
-    const layer3 = document.querySelectorAll('.tech-icon');
-    layer3.forEach((element, index) => {
-      const speed = (index + 1) * 3;
-      const x = deltaX * speed;
-      const y = deltaY * speed;
-      element.style.transform = `translate(${x}px, ${y}px) rotate(${deltaX * 30}deg)`;
-    });
-  });
-
-  // Holographic Text Glitch Effect
-  const holographicTitle = document.querySelector('.holographic');
-  if (holographicTitle) {
-    setInterval(() => {
-      holographicTitle.style.textShadow = `
-        ${Math.random() * 10 - 5}px ${Math.random() * 10 - 5}px 0 #ff00ff,
-        ${Math.random() * 10 - 5}px ${Math.random() * 10 - 5}px 0 #00ffff
-      `;
+  // Advanced Parallax with Depth Layers (only on home page)
+  if (document.querySelector('.hero-container')) {
+    document.addEventListener('mousemove', (e) => {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      const deltaX = (e.clientX - centerX) / centerX;
+      const deltaY = (e.clientY - centerY) / centerY;
       
-      setTimeout(() => {
-        holographicTitle.style.textShadow = 'none';
-      }, 100);
-    }, 3000);
+      // Layer 1: Slow movement (background elements)
+      const layer1 = document.querySelectorAll('.dna-helix, .radar-container');
+      layer1.forEach(element => {
+        const x = deltaX * 5;
+        const y = deltaY * 5;
+        element.style.transform = `translate(${x}px, ${y}px)`;
+      });
+      
+      // Layer 2: Medium movement (geometric shapes)
+      const layer2 = document.querySelectorAll('.geometric-shape');
+      layer2.forEach(element => {
+        const x = deltaX * 10;
+        const y = deltaY * 10;
+        element.style.transform = `translate(${x}px, ${y}px) rotate(${deltaX * 20}deg)`;
+      });
+      
+      // Layer 3: Fast movement (tech icons)
+      const layer3 = document.querySelectorAll('.tech-icon');
+      layer3.forEach((element, index) => {
+        const speed = (index + 1) * 3;
+        const x = deltaX * speed;
+        const y = deltaY * speed;
+        element.style.transform = `translate(${x}px, ${y}px) rotate(${deltaX * 30}deg)`;
+      });
+    });
+  }
+
+  // Holographic Text Glitch Effect (only on home page)
+  if (document.querySelector('.hero-container')) {
+    const holographicTitle = document.querySelector('.holographic');
+    if (holographicTitle) {
+      setInterval(() => {
+        holographicTitle.style.textShadow = `
+          ${Math.random() * 10 - 5}px ${Math.random() * 10 - 5}px 0 #ff00ff,
+          ${Math.random() * 10 - 5}px ${Math.random() * 10 - 5}px 0 #00ffff
+        `;
+        
+        setTimeout(() => {
+          holographicTitle.style.textShadow = 'none';
+        }, 100);
+      }, 3000);
+    }
   }
 
   // Rainbow Trail Effect for Cursor
@@ -2075,15 +2090,17 @@ document.addEventListener('turbo:load', function() {
     };
   }
 
-  // Create rainbow trail on mouse movement (throttled)
-  let lastTrailTime = 0;
-  document.addEventListener('mousemove', (e) => {
-    const now = Date.now();
-    if (now - lastTrailTime > 50) { // Throttle to every 50ms
-      createRainbowTrail(e.clientX, e.clientY);
-      lastTrailTime = now;
-    }
-  });
+  // Create rainbow trail on mouse movement (throttled, only on home page)
+  if (document.querySelector('.hero-container')) {
+    let lastTrailTime = 0;
+    document.addEventListener('mousemove', (e) => {
+      const now = Date.now();
+      if (now - lastTrailTime > 50) { // Throttle to every 50ms
+        createRainbowTrail(e.clientX, e.clientY);
+        lastTrailTime = now;
+      }
+    });
+  }
 });
 </script>
 
