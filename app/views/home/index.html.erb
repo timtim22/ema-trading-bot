@@ -1189,6 +1189,32 @@
     50% { background-position: 100% 50%; }
   }
 
+  /* Sparkle Animation for Stimulus Controller */
+  @keyframes sparkleAnimation {
+    0% { 
+      opacity: 0; 
+      transform: scale(0) rotate(0deg); 
+    }
+    50% { 
+      opacity: 1; 
+      transform: scale(1) rotate(180deg); 
+    }
+    100% { 
+      opacity: 0; 
+      transform: scale(0) rotate(360deg); 
+    }
+  }
+
+  .sparkle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow: 0 0 10px var(--accent-green);
+  }
+
   /* Radar Sweep Effect */
   .radar-container {
     position: absolute;
@@ -1300,7 +1326,7 @@
   }
 </style>
 
-<div class="hero-container">
+<div class="hero-container" data-controller="home-animations" data-home-animations-hero-container-target="heroContainer">
   <!-- Custom Cursor -->
   <div class="custom-cursor"></div>
   
@@ -1406,7 +1432,7 @@
       </div>
       <div class="col-lg-6">
         <div class="trading-visual animate-on-scroll">
-          <div class="chart-container glow-on-hover parallax-element">
+          <div class="chart-container glow-on-hover parallax-element" data-home-animations-chart-container-target="chartContainer">
             <!-- Chart Grid -->
             <div class="chart-grid"></div>
             
@@ -1801,37 +1827,9 @@ document.addEventListener('turbo:load', function() {
     }, 3000);
   }
 
-  // Add sparkle effect on random intervals
-  function createSparkle() {
-    const sparkle = document.createElement('div');
-    sparkle.style.position = 'fixed';
-    sparkle.style.width = '4px';
-    sparkle.style.height = '4px';
-    sparkle.style.background = 'var(--accent-green)';
-    sparkle.style.borderRadius = '50%';
-    sparkle.style.pointerEvents = 'none';
-    sparkle.style.zIndex = '9999';
-    sparkle.style.boxShadow = '0 0 10px var(--accent-green)';
-    
-    sparkle.style.left = Math.random() * window.innerWidth + 'px';
-    sparkle.style.top = Math.random() * window.innerHeight + 'px';
-    
-    document.body.appendChild(sparkle);
-    
-    sparkle.animate([
-      { opacity: 0, transform: 'scale(0)' },
-      { opacity: 1, transform: 'scale(1)' },
-      { opacity: 0, transform: 'scale(0)' }
-    ], {
-      duration: 1000,
-      easing: 'ease-in-out'
-    }).onfinish = () => {
-      document.body.removeChild(sparkle);
-    };
-  }
-
-  // Create sparkles periodically
-  setInterval(createSparkle, 2000);
+  // Sparkle effects - MOVED TO STIMULUS CONTROLLER
+  // This functionality is now handled by the home-animations Stimulus controller
+  console.log("✅ Sparkle effects moved to Stimulus controller");
 
   // Particle Explosion Effect on Click
   function createParticleExplosion(x, y) {
@@ -1883,38 +1881,9 @@ document.addEventListener('turbo:load', function() {
     });
   });
 
-  // Dynamic Geometric Shape Creation
-  function createRandomGeometricShape() {
-    const heroContainer = document.querySelector('.hero-container');
-    
-    // Only create shapes if we're on the home page and hero container exists
-    if (!heroContainer) {
-      return;
-    }
-    
-    const shapes = ['triangle', 'hexagon', 'diamond'];
-    const randomShape = shapes[Math.floor(Math.random() * shapes.length)];
-    
-    const shape = document.createElement('div');
-    shape.className = `geometric-shape ${randomShape}`;
-    shape.style.left = Math.random() * 100 + '%';
-    shape.style.animationDelay = Math.random() * 5 + 's';
-    shape.style.animationDuration = (15 + Math.random() * 10) + 's';
-    
-    heroContainer.appendChild(shape);
-    
-    // Remove shape after animation
-    setTimeout(() => {
-      if (heroContainer.contains(shape)) {
-        heroContainer.removeChild(shape);
-      }
-    }, 25000);
-  }
-
-  // Create new geometric shapes periodically (only if hero container exists)
-  if (document.querySelector('.hero-container')) {
-    setInterval(createRandomGeometricShape, 3000);
-  }
+  // Dynamic Geometric Shape Creation - MOVED TO STIMULUS CONTROLLER
+  // This functionality is now handled by the home-animations Stimulus controller
+  console.log("✅ Geometric shapes moved to Stimulus controller");
 
   // Enhanced Sound Wave Interaction - REMOVED
   // const soundWave = document.querySelector('.sound-wave');
@@ -1932,49 +1901,9 @@ document.addEventListener('turbo:load', function() {
   //   });
   // }
 
-  // Floating Text Animation
-  function createFloatingText(text, x, y) {
-    const floatingText = document.createElement('div');
-    floatingText.textContent = text;
-    floatingText.style.position = 'fixed';
-    floatingText.style.left = x + 'px';
-    floatingText.style.top = y + 'px';
-    floatingText.style.color = 'var(--accent-green)';
-    floatingText.style.fontSize = '14px';
-    floatingText.style.fontWeight = '600';
-    floatingText.style.pointerEvents = 'none';
-    floatingText.style.zIndex = '9999';
-    floatingText.style.opacity = '0';
-    
-    document.body.appendChild(floatingText);
-    
-    floatingText.animate([
-      { opacity: 0, transform: 'translateY(0) scale(0.8)' },
-      { opacity: 1, transform: 'translateY(-50px) scale(1)' },
-      { opacity: 0, transform: 'translateY(-100px) scale(1.2)' }
-    ], {
-      duration: 2000,
-      easing: 'ease-out'
-    }).onfinish = () => {
-      document.body.removeChild(floatingText);
-    };
-  }
-
-  // Random floating text messages (only on home page)
-  const tradingMessages = [
-    '+$1,247', 'PROFIT!', 'BUY SIGNAL', 'TREND UP', '+15.7%', 
-    'BULLISH', 'AI TRADING', 'SUCCESS', 'GROWTH', 'WINNING'
-  ];
-
-  // Only create floating text if we're on the home page
-  if (document.querySelector('.hero-container')) {
-    setInterval(() => {
-      const message = tradingMessages[Math.floor(Math.random() * tradingMessages.length)];
-      const x = Math.random() * (window.innerWidth - 100);
-      const y = Math.random() * (window.innerHeight - 100);
-      createFloatingText(message, x, y);
-    }, 4000);
-  }
+  // Floating Text Animation - MOVED TO STIMULUS CONTROLLER
+  // This functionality is now handled by the home-animations Stimulus controller
+  console.log("✅ Floating text animations moved to Stimulus controller");
 
   // Enhanced Chart Interaction with 3D Effects
   if (chartContainer) {
@@ -2062,45 +1991,9 @@ document.addEventListener('turbo:load', function() {
     }
   }
 
-  // Rainbow Trail Effect for Cursor
-  function createRainbowTrail(x, y) {
-    const colors = ['#ff0000', '#ff8800', '#ffff00', '#88ff00', '#00ff88', '#00ffff', '#8800ff', '#ff0088'];
-    const trail = document.createElement('div');
-    trail.style.position = 'fixed';
-    trail.style.left = x + 'px';
-    trail.style.top = y + 'px';
-    trail.style.width = '8px';
-    trail.style.height = '8px';
-    trail.style.background = colors[Math.floor(Math.random() * colors.length)];
-    trail.style.borderRadius = '50%';
-    trail.style.pointerEvents = 'none';
-    trail.style.zIndex = '9990';
-    trail.style.opacity = '0.7';
-    
-    document.body.appendChild(trail);
-    
-    trail.animate([
-      { opacity: 0.7, transform: 'scale(1)' },
-      { opacity: 0, transform: 'scale(0)' }
-    ], {
-      duration: 1000,
-      easing: 'ease-out'
-    }).onfinish = () => {
-      document.body.removeChild(trail);
-    };
-  }
-
-  // Create rainbow trail on mouse movement (throttled, only on home page)
-  if (document.querySelector('.hero-container')) {
-    let lastTrailTime = 0;
-    document.addEventListener('mousemove', (e) => {
-      const now = Date.now();
-      if (now - lastTrailTime > 50) { // Throttle to every 50ms
-        createRainbowTrail(e.clientX, e.clientY);
-        lastTrailTime = now;
-      }
-    });
-  }
+  // Rainbow Trail Effects - DISABLED FOR STABILITY
+  // This functionality has been disabled to prevent DOM manipulation conflicts
+  console.log("✅ Rainbow trail effects disabled for stability");
 });
 </script>
 

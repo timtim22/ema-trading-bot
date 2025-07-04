@@ -283,7 +283,7 @@ export default class extends Controller {
                   </p>
                 </div>
                 <button 
-                  onclick="this.closest('div[style*=\"position: fixed\"]').remove()"
+                  onclick="try { const notif = this.closest('div[style*=\"position: fixed\"]'); if (notif && notif.parentNode) notif.parentNode.removeChild(notif); } catch(e) { console.debug('Element already removed'); }"
                   style="
                     background: rgba(255, 255, 255, 0.8);
                     border: none;
@@ -336,16 +336,7 @@ export default class extends Controller {
       
       // Auto remove after 6 seconds (slightly longer for better UX)
       setTimeout(() => {
-        if (notification.parentNode) {
-          notification.style.transform = 'translateX(100%) scale(0.95)'
-          notification.style.opacity = '0'
-          setTimeout(() => {
-            if (notification.parentNode) {
-              notification.parentNode.removeChild(notification)
-              console.log("🗑️ Notification removed")
-            }
-          }, 400)
-        }
+        this.safeRemoveNotification(notification)
       }, 6000)
       
       console.log(`✅ Notification setup complete`)
@@ -420,6 +411,27 @@ export default class extends Controller {
       audio.play().catch(e => console.log("Fallback beep failed:", e))
     } catch (error) {
       console.log("Fallback beep failed:", error)
+    }
+  }
+  
+  safeRemoveNotification(notification) {
+    try {
+      if (notification && notification.parentNode) {
+        notification.style.transform = 'translateX(100%) scale(0.95)'
+        notification.style.opacity = '0'
+        setTimeout(() => {
+          try {
+            if (notification && notification.parentNode) {
+              notification.parentNode.removeChild(notification)
+              console.log("🗑️ Notification safely removed")
+            }
+          } catch (error) {
+            console.debug("Notification already removed:", error.message)
+          }
+        }, 400)
+      }
+    } catch (error) {
+      console.debug("Error removing notification:", error.message)
     }
   }
 } 
