@@ -40,6 +40,8 @@ Rails.application.routes.draw do
   get '/dashboard/market_data', to: 'dashboard#market_data'
   get '/dashboard/diagnostics', to: 'dashboard#diagnostics'
   get '/dashboard/test_market_data', to: 'dashboard#test_market_data'
+  get '/dashboard/jobs_status', to: 'dashboard#jobs_status'
+  post '/dashboard/start_jobs', to: 'dashboard#start_jobs'
   
   # Paper trading routes
   get '/dashboard/paper_trading_info', to: 'dashboard#paper_trading_info'

@@ -599,6 +599,102 @@ class DashboardController < ApplicationController
     }
   end
   
+  # Check the status of background jobs
+  def jobs_status
+    begin
+      status_info = {
+        timestamp: Time.current.iso8601,
+        bot_states: {},
+        sidekiq_status: {}
+      }
+      
+      # Check bot states
+      BotState.all.each do |state|
+        status_info[:bot_states][state.symbol] = {
+          running: state.running?,
+          last_run_at: state.last_run_at&.iso8601,
+          error_message: state.error_message
+        }
+      end
+      
+      # Check Sidekiq jobs if available
+      begin
+        require 'sidekiq/api'
+        
+        scheduled = Sidekiq::ScheduledSet.new
+        market_jobs = scheduled.select do |job|
+          job.klass == 'Sidekiq::ActiveJob::Wrapper' && 
+          job.args.first['job_class'] == 'MarketPingJob'
+        end
+        
+        status_info[:sidekiq_status] = {
+          scheduled_jobs_count: market_jobs.count,
+          sidekiq_available: true,
+          redis_connected: true
+        }
+        
+      rescue => e
+        status_info[:sidekiq_status] = {
+          scheduled_jobs_count: 0,
+          sidekiq_available: false,
+          error: e.message,
+          redis_connected: false
+        }
+      end
+      
+      # Check user symbols
+      user_symbols = current_user.configured_symbols rescue ['AAPL']
+      status_info[:user_symbols] = user_symbols
+      
+      render json: {
+        success: true,
+        status: status_info
+      }
+      
+    rescue => e
+      Rails.logger.error "DashboardController#jobs_status: Error: #{e.message}"
+      render json: {
+        success: false,
+        error: e.message
+      }, status: 500
+    end
+  end
+  
+  # Start background jobs manually
+  def start_jobs
+    begin
+      Rails.logger.info "DashboardController#start_jobs: Manual start requested by #{current_user.email}"
+      
+      # Get user's configured symbols
+      symbols = current_user.configured_symbols.presence || ['AAPL']
+      started_jobs = []
+      
+      symbols.each do |symbol|
+        # Start the bot state
+        bot_state = BotState.start!(symbol)
+        
+        # Schedule the market ping job
+        MarketPingJob.perform_later(symbol)
+        started_jobs << symbol
+        
+        Rails.logger.info "DashboardController#start_jobs: Started job for #{symbol}"
+      end
+      
+      render json: {
+        success: true,
+        message: "Started market ping jobs for: #{started_jobs.join(', ')}",
+        symbols: started_jobs
+      }
+      
+    rescue => e
+      Rails.logger.error "DashboardController#start_jobs: Error: #{e.message}"
+      render json: {
+        success: false,
+        error: "Failed to start jobs: #{e.message}"
+      }, status: 500
+    end
+  end
+  
   private
   
   # Calculate EMAs from closing prices (same logic as MarketPingJob)
