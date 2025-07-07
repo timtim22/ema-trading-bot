@@ -34,9 +34,14 @@ class User < ApplicationRecord
   end
   
   def configured_symbols
-    # Use TrackedSymbol model if available, fallback to bot_setting
-    active_tracked_symbols = tracked_symbols.active.pluck(:symbol)
-    active_tracked_symbols.presence || bot_configuration.symbols_list
+    # Use TrackedSymbol model if available, fallback to default symbols
+    begin
+      active_tracked_symbols = tracked_symbols.active.pluck(:symbol)
+      active_tracked_symbols.presence || ['AAPL']
+    rescue => e
+      Rails.logger.error "User#configured_symbols error for user #{id}: #{e.message}"
+      ['AAPL'] # Safe fallback
+    end
   end
   
   def active_tracked_symbols

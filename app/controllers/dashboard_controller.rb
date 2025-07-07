@@ -286,28 +286,51 @@ class DashboardController < ApplicationController
     symbol = params[:symbol]
     timeframe = params[:timeframe] || '5m'
     
+    Rails.logger.info "DashboardController#market_data: Starting request for #{symbol} (#{timeframe})"
+    
     # Check if user has access to this symbol
-    unless current_user.configured_symbols.include?(symbol)
-      broadcast_error_notification("Symbol #{symbol} not configured for your account")
-      render json: { error: 'Symbol not configured for this user' }, status: 403
-      return
+    begin
+      user_symbols = current_user.configured_symbols
+      Rails.logger.info "DashboardController#market_data: User symbols: #{user_symbols.inspect}"
+      
+      unless user_symbols.include?(symbol)
+        Rails.logger.warn "DashboardController#market_data: Symbol #{symbol} not in user's configured symbols: #{user_symbols}"
+        broadcast_error_notification("Symbol #{symbol} not configured for your account")
+        render json: { error: 'Symbol not configured for this user' }, status: 403
+        return
+      end
+    rescue => e
+      Rails.logger.error "DashboardController#market_data: Error checking user symbols: #{e.message}"
+      # Continue anyway with a default symbol check
+      unless ['AAPL', 'TSLA', 'GOOGL'].include?(symbol)
+        render json: { error: 'Symbol not available' }, status: 403
+        return
+      end
     end
     
     begin
       # Check market hours and show warning if needed
+      Rails.logger.info "DashboardController#market_data: Checking market hours..."
       check_and_warn_market_hours
       
       Rails.logger.info "DashboardController#market_data: Fetching data for #{symbol} (#{timeframe})"
       
       # Get current market data using the same service as MarketPingJob
+      Rails.logger.info "DashboardController#market_data: Getting price data..."
       price_data = MarketDataService.get_current_price(symbol)
+      Rails.logger.info "DashboardController#market_data: Price data received: #{price_data.inspect}"
+      
+      Rails.logger.info "DashboardController#market_data: Getting OHLC data..."
       ohlc_data = MarketDataService.get_ohlc_data(symbol)
+      Rails.logger.info "DashboardController#market_data: OHLC data received: #{ohlc_data.inspect}"
       
       Rails.logger.info "DashboardController#market_data: Price data source: #{price_data[:source]}"
       Rails.logger.info "DashboardController#market_data: OHLC data source: #{ohlc_data[:source]}"
       
       # Get historical data based on timeframe
+      Rails.logger.info "DashboardController#market_data: Getting historical data..."
       historical_data = get_historical_data_for_timeframe(symbol, timeframe)
+      Rails.logger.info "DashboardController#market_data: Historical data received with #{historical_data[:candles]&.length || 0} candles"
       
       market_data = {
         symbol: symbol,
@@ -574,6 +597,102 @@ class DashboardController < ApplicationController
       success: true,
       test_results: test_results
     }
+  end
+  
+  # Check the status of background jobs
+  def jobs_status
+    begin
+      status_info = {
+        timestamp: Time.current.iso8601,
+        bot_states: {},
+        sidekiq_status: {}
+      }
+      
+      # Check bot states
+      BotState.all.each do |state|
+        status_info[:bot_states][state.symbol] = {
+          running: state.running?,
+          last_run_at: state.last_run_at&.iso8601,
+          error_message: state.error_message
+        }
+      end
+      
+      # Check Sidekiq jobs if available
+      begin
+        require 'sidekiq/api'
+        
+        scheduled = Sidekiq::ScheduledSet.new
+        market_jobs = scheduled.select do |job|
+          job.klass == 'Sidekiq::ActiveJob::Wrapper' && 
+          job.args.first['job_class'] == 'MarketPingJob'
+        end
+        
+        status_info[:sidekiq_status] = {
+          scheduled_jobs_count: market_jobs.count,
+          sidekiq_available: true,
+          redis_connected: true
+        }
+        
+      rescue => e
+        status_info[:sidekiq_status] = {
+          scheduled_jobs_count: 0,
+          sidekiq_available: false,
+          error: e.message,
+          redis_connected: false
+        }
+      end
+      
+      # Check user symbols
+      user_symbols = current_user.configured_symbols rescue ['AAPL']
+      status_info[:user_symbols] = user_symbols
+      
+      render json: {
+        success: true,
+        status: status_info
+      }
+      
+    rescue => e
+      Rails.logger.error "DashboardController#jobs_status: Error: #{e.message}"
+      render json: {
+        success: false,
+        error: e.message
+      }, status: 500
+    end
+  end
+  
+  # Start background jobs manually
+  def start_jobs
+    begin
+      Rails.logger.info "DashboardController#start_jobs: Manual start requested by #{current_user.email}"
+      
+      # Get user's configured symbols
+      symbols = current_user.configured_symbols.presence || ['AAPL']
+      started_jobs = []
+      
+      symbols.each do |symbol|
+        # Start the bot state
+        bot_state = BotState.start!(symbol)
+        
+        # Schedule the market ping job
+        MarketPingJob.perform_later(symbol)
+        started_jobs << symbol
+        
+        Rails.logger.info "DashboardController#start_jobs: Started job for #{symbol}"
+      end
+      
+      render json: {
+        success: true,
+        message: "Started market ping jobs for: #{started_jobs.join(', ')}",
+        symbols: started_jobs
+      }
+      
+    rescue => e
+      Rails.logger.error "DashboardController#start_jobs: Error: #{e.message}"
+      render json: {
+        success: false,
+        error: "Failed to start jobs: #{e.message}"
+      }, status: 500
+    end
   end
   
   private

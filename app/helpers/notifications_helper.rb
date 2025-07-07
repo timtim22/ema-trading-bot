@@ -8,6 +8,9 @@ module NotificationsHelper
       persistent: persistent, 
       context: context
     )
+  rescue => e
+    Rails.logger.error "NotificationsHelper#broadcast_error_notification error: #{e.message}"
+    nil # Don't halt the request if notification fails
   end
   
   def broadcast_warning_notification(message, persistent: false, warning_key: nil)
@@ -38,6 +41,9 @@ module NotificationsHelper
   # Specific helper for market hours warnings
   def check_and_warn_market_hours
     NotificationService.check_and_broadcast_market_hours_warning(user: current_user)
+  rescue => e
+    Rails.logger.error "NotificationsHelper#check_and_warn_market_hours error: #{e.message}"
+    false # Return false if there's an error, don't halt the request
   end
   
   # Helper for data unavailable warnings
@@ -46,6 +52,9 @@ module NotificationsHelper
       symbol: symbol, 
       user: current_user
     )
+  rescue => e
+    Rails.logger.error "NotificationsHelper#broadcast_data_unavailable_warning error: #{e.message}"
+    nil # Don't halt the request if notification fails
   end
   
   # Render JSON with success notification

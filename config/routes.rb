@@ -34,13 +34,15 @@ Rails.application.routes.draw do
   get "/dashboard", to: "dashboard#index"
 
   # Bot state management routes
-  post "/dashboard/start_bot", to: "dashboard#start_bot"
-  post "/dashboard/stop_bot", to: "dashboard#stop_bot"
-  get "/dashboard/bot_status", to: "dashboard#bot_status"
-  get "/dashboard/market_data", to: "dashboard#market_data"
-  get "/dashboard/diagnostics", to: "dashboard#diagnostics"
-  get "/dashboard/test_market_data", to: "dashboard#test_market_data"
-
+  post '/dashboard/start_bot', to: 'dashboard#start_bot'
+  post '/dashboard/stop_bot', to: 'dashboard#stop_bot'
+  get '/dashboard/bot_status', to: 'dashboard#bot_status'
+  get '/dashboard/market_data', to: 'dashboard#market_data'
+  get '/dashboard/diagnostics', to: 'dashboard#diagnostics'
+  get '/dashboard/test_market_data', to: 'dashboard#test_market_data'
+  get '/dashboard/jobs_status', to: 'dashboard#jobs_status'
+  post '/dashboard/start_jobs', to: 'dashboard#start_jobs'
+  
   # Paper trading routes
   get "/dashboard/paper_trading_info", to: "dashboard#paper_trading_info"
   get "/dashboard/paper_trading_details", to: "dashboard#paper_trading_details"
