@@ -577,9 +577,15 @@
   transition: all 0.3s ease;
 }
 
+.auth-link.signin {
+  background: linear-gradient(135deg, var(--navbar-accent-green), var(--navbar-accent-blue));
+  color: var(--navbar-primary-dark);
+  padding: 0.5rem 1rem;
+}
+
 .auth-link.signin:hover {
-  background: rgba(0, 255, 136, 0.1);
-  color: var(--navbar-text-light);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
 }
 
 .auth-link.signup {
@@ -803,12 +809,13 @@
 }
 
 .mobile-auth-link.mobile-signin {
-  color: var(--navbar-text-muted);
+  background: linear-gradient(135deg, var(--navbar-accent-green), var(--navbar-accent-blue));
+  color: var(--navbar-primary-dark);
 }
 
 .mobile-auth-link.mobile-signin:hover {
-  color: var(--navbar-text-light);
-  background: rgba(0, 255, 136, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(0, 255, 136, 0.3);
 }
 
 .mobile-auth-link.mobile-signup {
