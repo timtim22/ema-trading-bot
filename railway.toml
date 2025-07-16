@@ -1,9 +1,22 @@
 [build]
 builder = "DOCKERFILE"
 
-[deploy]
-healthcheckPath = "/"
-restartPolicyType = "ON_FAILURE"
+[[services]]
+name   = "web"
+source = "."
+  [services.build]
+  builder = "DOCKERFILE"
+  [services.deploy]
+  startCommand      = "bundle exec puma -C config/puma.rb"
+  healthcheckPath   = "/"
+  restartPolicyType = "ON_FAILURE"
 
 [[services]]
-name = "web" 
+name   = "worker"
+source = "."
+  [services.build]
+  builder = "DOCKERFILE"
+  [services.deploy]
+  startCommand      = "bundle exec sidekiq -C config/sidekiq.yml"
+  healthcheckPath   = "/"
+  restartPolicyType = "ON_FAILURE"
