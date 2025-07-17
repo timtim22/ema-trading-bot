@@ -38,7 +38,6 @@ env:
   clear:
     # Using Sidekiq for background job processing
     # Sidekiq workers run separately from the web process
-    # SOLID_QUEUE_IN_PUMA: true
 
     # Set number of processes dedicated to Sidekiq (default: 1)
     # JOB_CONCURRENCY: 3

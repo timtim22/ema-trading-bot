@@ -1,0 +1,29 @@
+# Sidekiq-cron schedule configuration
+# This file defines scheduled jobs that will run automatically in production
+
+# Market ping job for AAPL - runs every 30 seconds during market hours
+market_ping_aapl:
+  cron: "*/30 * * * * *"  # Every 30 seconds
+  class: "MarketPingJob"
+  description: "Fetch market data and send updates for AAPL"
+  args: ["AAPL"]
+
+# Market ping job for MSFT - runs every 30 seconds during market hours
+market_ping_msft:
+  cron: "*/30 * * * * *"  # Every 30 seconds
+  class: "MarketPingJob"
+  description: "Fetch market data and send updates for MSFT"
+  args: ["MSFT"]
+
+# Symbol management job - runs every 5 minutes to check for new symbols
+symbol_management:
+  cron: "0 */5 * * * *"  # Every 5 minutes
+  class: "SymbolManagementJob"
+  description: "Check for new tracked symbols and manage market ping jobs"
+
+# You can add more scheduled jobs here as needed
+# Example:
+# daily_cleanup:
+#   cron: "0 2 * * *"  # Daily at 2 AM
+#   class: "CleanupJob"
+#   description: "Clean up old data"

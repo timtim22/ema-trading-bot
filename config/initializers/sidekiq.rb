@@ -31,4 +31,33 @@ rescue => e
   if Rails.env.production?
     Rails.logger.error "Sidekiq: Redis connection required in production. Application may not function correctly."
   end
+end
+
+# Configure Sidekiq-cron for scheduled jobs
+require 'sidekiq-cron'
+
+# Load scheduled jobs from config/schedule.yml
+if File.exist?(Rails.root.join('config', 'schedule.yml'))
+  Rails.application.config.after_initialize do
+    schedule_file = Rails.root.join('config', 'schedule.yml')
+    if File.exist?(schedule_file)
+      schedule = YAML.load_file(schedule_file)
+      
+      # Only load cron jobs in production or when explicitly enabled
+      if Rails.env.production? || ENV['ENABLE_CRON_JOBS'] == 'true'
+        Rails.logger.info "Sidekiq-cron: Loading scheduled jobs from #{schedule_file}"
+        
+        schedule.each do |name, config|
+          begin
+            Sidekiq::Cron::Job.load_from_hash(name => config)
+            Rails.logger.info "Sidekiq-cron: Loaded job '#{name}' with cron '#{config['cron']}'"
+          rescue => e
+            Rails.logger.error "Sidekiq-cron: Failed to load job '#{name}': #{e.message}"
+          end
+        end
+      else
+        Rails.logger.info "Sidekiq-cron: Skipping scheduled jobs in #{Rails.env} environment"
+      end
+    end
+  end
 end 
