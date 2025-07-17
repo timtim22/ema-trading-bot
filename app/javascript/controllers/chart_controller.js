@@ -297,10 +297,23 @@ export default class extends Controller {
           secondsVisible: false,
           borderColor: '#d1d5db',
           tickMarkFormatter: (time) => {
-            // Convert timestamp to EDT/EST for display
+            // Convert timestamp to user's local timezone for display
             const date = new Date(time * 1000)
             return date.toLocaleTimeString('en-US', {
-              timeZone: 'America/New_York',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false
+            })
+          },
+        },
+        localization: {
+          timeFormatter: (time) => {
+            // Format crosshair tooltip time in user's local timezone
+            const date = new Date(time * 1000)
+            return date.toLocaleString('en-US', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
               hour: '2-digit',
               minute: '2-digit',
               hour12: false
@@ -1635,7 +1648,7 @@ export default class extends Controller {
     ema22.sort((a, b) => a.time - b.time)
     
     console.log(`📊 Generated ${candlesticks.length} sample candlesticks for ${this.symbolValue} (${this.timeframeValue})`)
-    console.log(`📊 Sample data time range: ${new Date(candlesticks[0]?.time * 1000).toLocaleString('en-US', {timeZone: 'America/New_York'})} to ${new Date(candlesticks[candlesticks.length - 1]?.time * 1000).toLocaleString('en-US', {timeZone: 'America/New_York'})} EDT`)
+    console.log(`📊 Sample data time range: ${new Date(candlesticks[0]?.time * 1000).toLocaleString()} to ${new Date(candlesticks[candlesticks.length - 1]?.time * 1000).toLocaleString()}`)
     console.log(`📊 Price range: $${Math.min(...candlesticks.map(c => c.low)).toFixed(2)} - $${Math.max(...candlesticks.map(c => c.high)).toFixed(2)}`)
     console.log(`📊 Volume range: ${Math.min(...volume.map(v => v.value)).toLocaleString()} - ${Math.max(...volume.map(v => v.value)).toLocaleString()}`)
     
@@ -2399,7 +2412,7 @@ export default class extends Controller {
     ema22.sort((a, b) => a.time - b.time)
     
     console.log(`📊 Generated ${candlesticks.length} historical candlesticks from current price for ${this.timeframeValue}`)
-    console.log(`📊 Time range: ${new Date(candlesticks[0]?.time * 1000).toLocaleString('en-US', {timeZone: 'America/New_York'})} to ${new Date(candlesticks[candlesticks.length - 1]?.time * 1000).toLocaleString('en-US', {timeZone: 'America/New_York'})} EDT`)
+    console.log(`📊 Time range: ${new Date(candlesticks[0]?.time * 1000).toLocaleString()} to ${new Date(candlesticks[candlesticks.length - 1]?.time * 1000).toLocaleString()}`)
     
     return { candlesticks, ema5, ema8, ema22 }
   }
