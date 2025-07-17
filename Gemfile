@@ -86,4 +86,4 @@ group :test do
   gem 'timecop'
 end
 
-gem "tailwindcss-rails", "~> 4.2"
+gem "tailwindcss-rails", "~> 4.3"
