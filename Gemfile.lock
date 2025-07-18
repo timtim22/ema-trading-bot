@@ -395,9 +395,9 @@ GEM
       fugit (~> 1.8, >= 1.11.1)
       globalid (>= 1.0.1)
       sidekiq (>= 6.5.0)
-    sqlite3 (2.7.0-aarch64-linux-gnu)
-    sqlite3 (2.7.0-arm64-darwin)
-    sqlite3 (2.7.0-x86_64-linux-gnu)
+    sqlite3 (2.7.3-aarch64-linux-gnu)
+    sqlite3 (2.7.3-arm64-darwin)
+    sqlite3 (2.7.3-x86_64-linux-gnu)
     sshkit (1.24.0)
       base64
       logger
