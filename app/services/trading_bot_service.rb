@@ -444,10 +444,22 @@ class TradingBotService
     month = date.month
     day = date.day
     
-    # Fixed date holidays
-    return "New Year's Day" if month == 1 && day == 1
-    return "Independence Day" if month == 7 && day == 4
-    return "Christmas Day" if month == 12 && day == 25
+    # Fixed date holidays with weekend observance
+    fixed_holidays = {
+      "New Year's Day" => Date.new(year, 1, 1),
+      "Juneteenth" => Date.new(year, 6, 19),
+      "Independence Day" => Date.new(year, 7, 4),
+      "Christmas Day" => Date.new(year, 12, 25)
+    }
+
+    fixed_holidays.each do |name, holiday_date|
+      observed_date = case holiday_date.wday
+                      when 6 then holiday_date - 1  # Saturday observed on Friday
+                      when 0 then holiday_date + 1  # Sunday observed on Monday
+                      else holiday_date
+                      end
+      return name if date.to_date == holiday_date || date.to_date == observed_date
+    end
     
     # Martin Luther King Jr. Day (3rd Monday in January)
     mlk_day = third_monday_of_month(year, 1)
@@ -464,9 +476,6 @@ class TradingBotService
     # Memorial Day (last Monday in May)
     memorial_day = last_monday_of_month(year, 5)
     return "Memorial Day" if date.to_date == memorial_day
-    
-    # Juneteenth (June 19)
-    return "Juneteenth" if month == 6 && day == 19
     
     # Labor Day (1st Monday in September)
     labor_day = first_monday_of_month(year, 9)
