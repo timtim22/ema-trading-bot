@@ -1,0 +1,243 @@
+<div class="min-h-screen bg-gray-50 py-8" data-controller="profile-editor">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-3xl mx-auto">
+      <!-- Header -->
+      <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <h1 class="text-2xl font-bold text-gray-900">Profile</h1>
+              <p class="mt-1 text-sm text-gray-500">Manage your account information and settings</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error Messages -->
+      <% if @user.errors.any? %>
+        <div class="mt-6 bg-red-50 border border-red-200 rounded-lg">
+          <div class="px-4 py-3">
+            <div class="flex">
+              <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">
+                  Please correct the following errors:
+                </h3>
+                <ul class="mt-2 text-sm text-red-700 list-disc list-inside">
+                  <% @user.errors.full_messages.each do |message| %>
+                    <li><%= message %></li>
+                  <% end %>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Success Message -->
+      <% if notice %>
+        <div class="mt-6 bg-green-50 border border-green-200 rounded-lg">
+          <div class="px-4 py-3">
+            <div class="flex">
+              <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div class="ml-3">
+                <p class="text-sm font-medium text-green-800"><%= notice %></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <%= form_with model: @user, url: profile_path, method: :patch, local: true, data: { profile_editor_target: "form" } do |f| %>
+        <!-- Profile Information -->
+        <div class="mt-6 bg-white shadow rounded-lg">
+          <div class="px-4 py-5 sm:p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h2 class="text-lg font-medium text-gray-900">Personal Information</h2>
+              <!-- Edit Profile Button - styled like Change Password button -->
+              <button type="button" data-action="click->profile-editor#toggleEditMode" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <svg class="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                <span data-profile-editor-target="editButtonText">Edit Profile</span>
+              </button>
+            </div>
+            
+            <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+              <!-- First Name -->
+              <div>
+                <dt class="text-sm font-medium text-gray-500">First Name</dt>
+                <dd class="mt-1">
+                  <!-- View Mode -->
+                  <div data-profile-editor-target="firstNameView" class="text-sm text-gray-900">
+                    <%= @user.first_name.present? ? @user.first_name : 'Not provided' %>
+                  </div>
+                  <!-- Edit Mode -->
+                  <div data-profile-editor-target="firstNameEdit" class="hidden">
+                    <%= f.text_field :first_name, 
+                        class: "block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2",
+                        placeholder: "Enter your first name" %>
+                  </div>
+                </dd>
+              </div>
+
+              <!-- Last Name -->
+              <div>
+                <dt class="text-sm font-medium text-gray-500">Last Name</dt>
+                <dd class="mt-1">
+                  <!-- View Mode -->
+                  <div data-profile-editor-target="lastNameView" class="text-sm text-gray-900">
+                    <%= @user.last_name.present? ? @user.last_name : 'Not provided' %>
+                  </div>
+                  <!-- Edit Mode -->
+                  <div data-profile-editor-target="lastNameEdit" class="hidden">
+                    <%= f.text_field :last_name, 
+                        class: "block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2",
+                        placeholder: "Enter your last name" %>
+                  </div>
+                </dd>
+              </div>
+
+              <!-- Email -->
+              <div class="sm:col-span-2">
+                <dt class="text-sm font-medium text-gray-500">Email Address</dt>
+                <dd class="mt-1">
+                  <!-- View Mode -->
+                  <div data-profile-editor-target="emailView" class="text-sm text-gray-900">
+                    <div class="flex items-center">
+                      <svg class="h-4 w-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                      </svg>
+                      <%= @user.email %>
+                    </div>
+                  </div>
+                  <!-- Edit Mode -->
+                  <div data-profile-editor-target="emailEdit" class="hidden">
+                    <%= f.email_field :email, 
+                        class: "block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2",
+                        placeholder: "Enter your email address" %>
+                    <p class="mt-1 text-xs text-gray-500">
+                      This will be used for login and important notifications
+                    </p>
+                  </div>
+                </dd>
+              </div>
+
+              <!-- Account Created -->
+              <div class="sm:col-span-2">
+                <dt class="text-sm font-medium text-gray-500">Member Since</dt>
+                <dd class="mt-1 text-sm text-gray-900">
+                  <%= @user.created_at.strftime("%B %d, %Y") %>
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+
+        <!-- Save/Cancel Buttons (Hidden by default) -->
+        <div data-profile-editor-target="saveButtons" class="mt-6 bg-gray-50 border border-gray-200 rounded-lg px-4 py-6 sm:px-6 hidden">
+          <div class="flex justify-between items-center">
+            <div>
+              <h3 class="text-lg font-medium text-gray-900">Save Your Changes</h3>
+              <p class="text-sm text-gray-500">Update your personal information</p>
+            </div>
+            <div class="flex space-x-4">
+              <button type="button" data-action="click->profile-editor#cancelEdit" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <svg class="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Cancel
+              </button>
+              <%= f.submit "Save Changes", class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Security Section -->
+      <div class="mt-6 bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-medium text-gray-900">Security</h2>
+            <button type="button" data-action="click->profile-editor#togglePasswordSection" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <svg class="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+              Change Password
+            </button>
+          </div>
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-medium text-gray-900">Password</h3>
+              <p class="text-sm text-gray-500">Last updated: <%= @user.updated_at.strftime("%B %d, %Y") %></p>
+            </div>
+          </div>
+          
+          <!-- Password Change Form (Hidden by default) -->
+          <div data-profile-editor-target="passwordSection" class="hidden mt-6 border-t border-gray-200 pt-6">
+            <%= form_with model: @user, url: profile_path, method: :patch, local: true do |f| %>
+              <!-- Hidden fields to preserve other data -->
+              <%= f.hidden_field :first_name %>
+              <%= f.hidden_field :last_name %>
+              <%= f.hidden_field :email %>
+              
+              <div class="grid grid-cols-1 gap-6">
+                <!-- Current Password -->
+                <div>
+                  <%= f.label :current_password, class: "block text-sm font-medium text-gray-700" %>
+                  <%= f.password_field :current_password, 
+                      class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2",
+                      placeholder: "Enter current password",
+                      autocomplete: "current-password" %>
+                  <p class="mt-1 text-xs text-gray-500">Required to change password</p>
+                </div>
+
+                <!-- New Password -->
+                <div>
+                  <%= f.label :password, "New Password", class: "block text-sm font-medium text-gray-700" %>
+                  <%= f.password_field :password, 
+                      class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2",
+                      placeholder: "Enter new password",
+                      autocomplete: "new-password" %>
+                  <p class="mt-1 text-xs text-gray-500">Minimum 6 characters</p>
+                </div>
+
+                <!-- Confirm Password -->
+                <div>
+                  <%= f.label :password_confirmation, "Confirm New Password", class: "block text-sm font-medium text-gray-700" %>
+                  <%= f.password_field :password_confirmation, 
+                      class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm py-2",
+                      placeholder: "Confirm new password",
+                      autocomplete: "new-password" %>
+                </div>
+                
+                <!-- Password Change Buttons -->
+                <div class="mt-6 bg-gray-50 border border-gray-200 rounded-lg px-4 py-6">
+                  <div class="flex justify-between items-center">
+                    <div>
+                      <h3 class="text-lg font-medium text-gray-900">Update Password</h3>
+                      <p class="text-sm text-gray-500">Save your new password</p>
+                    </div>
+                    <div class="flex space-x-4">
+                      <button type="button" data-action="click->profile-editor#hidePasswordSection" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <svg class="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Cancel
+                      </button>
+                      <%= f.submit "Update Password", class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" %>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
