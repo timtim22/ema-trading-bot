@@ -1,0 +1,240 @@
+<div class="min-h-screen bg-gray-50 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-3xl mx-auto">
+      <!-- Header -->
+      <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <h1 class="text-2xl font-bold text-gray-900">Edit Profile</h1>
+              <p class="mt-1 text-sm text-gray-500">Update your account information and settings</p>
+            </div>
+            <%= link_to profile_show_path, class: "inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" do %>
+              <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to Profile
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error Messages -->
+      <% if @user.errors.any? %>
+        <div class="mt-6 bg-red-50 border border-red-200 rounded-lg">
+          <div class="px-4 py-3">
+            <div class="flex">
+              <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">
+                  Please correct the following errors:
+                </h3>
+                <ul class="mt-2 text-sm text-red-700 list-disc list-inside">
+                  <% @user.errors.full_messages.each do |message| %>
+                    <li><%= message %></li>
+                  <% end %>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Success Message -->
+      <% if notice %>
+        <div class="mt-6 bg-green-50 border border-green-200 rounded-lg">
+          <div class="px-4 py-3">
+            <div class="flex">
+              <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div class="ml-3">
+                <p class="text-sm font-medium text-green-800"><%= notice %></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <%= form_with model: @user, url: profile_path, method: :patch, local: true, class: "mt-6" do |f| %>
+        <!-- Personal Information -->
+        <div class="bg-white shadow rounded-lg">
+          <div class="px-4 py-5 sm:p-6">
+            <h2 class="text-lg font-medium text-gray-900 mb-6">Personal Information</h2>
+            
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <!-- First Name -->
+              <div>
+                <%= f.label :first_name, class: "block text-sm font-medium text-gray-700" %>
+                <%= f.text_field :first_name, 
+                    class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-base py-2 #{'border-red-300' if @user.errors[:first_name].any?}",
+                    placeholder: "Enter your first name" %>
+                <% if @user.errors[:first_name].any? %>
+                  <p class="mt-1 text-sm text-red-600"><%= @user.errors[:first_name].first %></p>
+                <% end %>
+              </div>
+
+              <!-- Last Name -->
+              <div>
+                <%= f.label :last_name, class: "block text-sm font-medium text-gray-700" %>
+                <%= f.text_field :last_name, 
+                    class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-base py-2 #{'border-red-300' if @user.errors[:last_name].any?}",
+                    placeholder: "Enter your last name" %>
+                <% if @user.errors[:last_name].any? %>
+                  <p class="mt-1 text-sm text-red-600"><%= @user.errors[:last_name].first %></p>
+                <% end %>
+              </div>
+
+              <!-- Email -->
+              <div class="sm:col-span-2">
+                <%= f.label :email, class: "block text-sm font-medium text-gray-700" %>
+                <%= f.email_field :email, 
+                    class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-base py-2 #{'border-red-300' if @user.errors[:email].any?}",
+                    placeholder: "Enter your email address" %>
+                <% if @user.errors[:email].any? %>
+                  <p class="mt-1 text-sm text-red-600"><%= @user.errors[:email].first %></p>
+                <% end %>
+                <p class="mt-1 text-sm text-gray-500">
+                  This will be used for login and important notifications
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions for Basic Info -->
+        <div class="mt-6 bg-gray-50 border border-gray-200 rounded-lg px-4 py-6 sm:px-6">
+          <div class="flex justify-between items-center">
+            <div>
+              <h3 class="text-lg font-medium text-gray-900">Save Your Changes</h3>
+              <p class="text-sm text-gray-500">Update your personal information</p>
+            </div>
+            <div class="flex space-x-4">
+              <%= link_to profile_show_path, class: "inline-flex items-center px-6 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200" do %>
+                <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Cancel
+              <% end %>
+              <%= f.submit "Save Changes", class: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-lg transform hover:scale-105 transition-all duration-200" %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <!-- Optional Password Change Section -->
+      <div class="mt-8 bg-white shadow rounded-lg border-l-4 border-orange-400">
+        <div class="px-4 py-5 sm:p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-lg font-medium text-gray-900">Change Password (Optional)</h2>
+              <p class="text-sm text-gray-500">Only fill this section if you want to change your password</p>
+            </div>
+            <button type="button" id="toggle-password-section" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+              <span id="toggle-text">Show Password Fields</span>
+              <svg id="toggle-icon" class="ml-2 h-4 w-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+          
+          <!-- Password Fields (Initially Hidden) -->
+          <div id="password-fields" class="hidden">
+            <%= form_with model: @user, url: profile_path, method: :patch, local: true do |f| %>
+              <!-- Hidden fields to preserve other data -->
+              <%= f.hidden_field :first_name %>
+              <%= f.hidden_field :last_name %>
+              <%= f.hidden_field :email %>
+              
+              <div class="grid grid-cols-1 gap-6">
+                <!-- Current Password -->
+                <div>
+                  <%= f.label :current_password, class: "block text-sm font-medium text-gray-700" %>
+                  <%= f.password_field :current_password, 
+                      class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-base py-2 #{'border-red-300' if @user.errors[:current_password].any?}",
+                      placeholder: "Enter current password",
+                      autocomplete: "current-password" %>
+                  <% if @user.errors[:current_password].any? %>
+                    <p class="mt-1 text-sm text-red-600"><%= @user.errors[:current_password].first %></p>
+                  <% end %>
+                  <p class="mt-1 text-sm text-gray-500">
+                    Required to change password
+                  </p>
+                </div>
+
+                <!-- New Password -->
+                <div>
+                  <%= f.label :password, "New Password", class: "block text-sm font-medium text-gray-700" %>
+                  <%= f.password_field :password, 
+                      class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-base py-2 #{'border-red-300' if @user.errors[:password].any?}",
+                      placeholder: "Enter new password",
+                      autocomplete: "new-password" %>
+                  <% if @user.errors[:password].any? %>
+                    <p class="mt-1 text-sm text-red-600"><%= @user.errors[:password].first %></p>
+                  <% end %>
+                  <p class="mt-1 text-sm text-gray-500">
+                    Minimum 6 characters
+                  </p>
+                </div>
+
+                <!-- Confirm Password -->
+                <div>
+                  <%= f.label :password_confirmation, "Confirm New Password", class: "block text-sm font-medium text-gray-700" %>
+                  <%= f.password_field :password_confirmation, 
+                      class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 text-base py-2 #{'border-red-300' if @user.errors[:password_confirmation].any?}",
+                      placeholder: "Confirm new password",
+                      autocomplete: "new-password" %>
+                  <% if @user.errors[:password_confirmation].any? %>
+                    <p class="mt-1 text-sm text-red-600"><%= @user.errors[:password_confirmation].first %></p>
+                  <% end %>
+                </div>
+                
+                <!-- Password Change Button -->
+                <div class="flex justify-end">
+                  <%= f.submit "Update Password", class: "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 shadow-lg transform hover:scale-105 transition-all duration-200" %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Floating Save Button for Basic Info -->
+      <div class="fixed bottom-8 right-8 z-50">
+        <button type="button" onclick="document.querySelector('form').submit();" class="inline-flex items-center px-6 py-4 border border-transparent text-lg font-medium rounded-full text-white bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-2xl transform hover:scale-110 transition-all duration-300">
+          <svg class="-ml-1 mr-2 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          SAVE INFO
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const toggleButton = document.getElementById('toggle-password-section');
+  const passwordFields = document.getElementById('password-fields');
+  const toggleText = document.getElementById('toggle-text');
+  const toggleIcon = document.getElementById('toggle-icon');
+  
+  let isPasswordSectionVisible = false;
+  
+  toggleButton.addEventListener('click', function() {
+    isPasswordSectionVisible = !isPasswordSectionVisible;
+    
+    if (isPasswordSectionVisible) {
+      passwordFields.classList.remove('hidden');
+      toggleText.textContent = 'Hide Password Fields';
+      toggleIcon.style.transform = 'rotate(180deg)';
+    } else {
+      passwordFields.classList.add('hidden');
+      toggleText.textContent = 'Show Password Fields';
+      toggleIcon.style.transform = 'rotate(0deg)';
+    }
+  });
+});
+</script>
